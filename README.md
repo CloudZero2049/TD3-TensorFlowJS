@@ -24,6 +24,10 @@
 
 	5d) full python TD3 code: https://github.com/abhisheksuran/Reinforcement_Learning/blob/master/td3withtau.ipynb
 
+ 	5e) OpenAI Gym Lunar Lander Documentation (for 5c, 5d environment): https://www.gymlibrary.dev/environments/box2d/lunar_lander/
+
+   	5f) OpenAI Gym full Lunar Lander code on GitHub (for 5c, 5d environment): https://github.com/openai/gym/blob/master/gym/envs/box2d/lunar_lander.py
+
 	5e) geeksforgeeks.org (helping learn TF.js functions): https://www.geeksforgeeks.org/
 
 	5f) Machine learning with Phil, TD3 video: https://www.youtube.com/watch?v=ZhFO8EWADmY&list=WL&index=34&t=2364s
@@ -34,4 +38,4 @@
 
 	4j) Justin Wallander, TD3 video: https://www.youtube.com/watch?v=-wq-luYhzy4&list=PLuEC_Hx7ZKHXwwRVhrVVIqRH8DIoCgL39&index=29
 
-6) About the owner (2023): I am a 32-year-old college student working towards an AA. My goal is to become a computer programmer of some sort. I have a deep interest in game design and artificial intelligence.
+7) About the owner (2023): I am a 32-year-old college student working towards an AA. My goal is to become a computer programmer of some sort. I have a deep interest in game design and artificial intelligence.
