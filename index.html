@@ -1,0 +1,76 @@
+<!DOCTYPE HTML>
+<html lang="us">
+<head>
+<meta charset="UTF-8">
+<title>Testing TD3 AI</title>
+
+<style rel="stylesheet" type="text/css">
+
+body { overflow: visible;
+}
+
+* {user-select: none;outline-style: none;}
+
+#canvasDiv {position: absolute;
+            left: 0;
+            top: 0;
+            z-index: 1;
+            }
+canvas {position: absolute;
+        border:5px solid #ffa700;
+        
+        z-index: 1;
+        }
+#mycanvas {background: transparent;
+            z-index: 2;
+            }
+#bgcanvas {z-index: 1;}
+
+#infoDiv {position: absolute;
+            top: 20px;
+            left: 700px;
+            z-index: 3;
+        }
+#buttonsDiv {position: absolute;
+    top: 100px;
+    left: 700px;
+    z-index: 3;
+}
+
+</style>
+
+  <!-- Import TensorFlow.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+  <!-- Import tfjs-vis -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.0.2/dist/tfjs-vis.umd.min.js"></script>
+</head>
+    
+<body>
+<div id="canvasDiv">
+<canvas id="bgCanvas"></canvas>
+<canvas id="myCanvas"></canvas>
+</div>
+
+<div id="infoDiv">
+    <p id="rewardTextArea">Rewards:</p>
+    <p id="punishTextArea">punishments:</p>
+</div>
+
+<div id="buttonsDiv">
+    <button id="startPlayerButton" onclick="Game.start(`player`);" disabled="true">Start Player</button>
+    <button id="startTD3Button" onclick="Game.start(`TD3`);" disabled="true">Start TD3 AI</button>
+    <!-- <button id="classButton" onclick="classify()" disabled="true">Classify</button> -->
+    <!--  <button id="saveModelButton" onclick="saveModel()" disabled="true">Save Model</button> -->
+</div>
+<script src="utils.js"> </script>
+<script src="Classes.js"> </script>
+<script src="game.js"></script>
+<script src="TD3script.js"></script>
+<script src="collisions.js"> </script>
+
+<script src="keyboardControl.js"> </script>
+
+</body>
+
+</html>
+
