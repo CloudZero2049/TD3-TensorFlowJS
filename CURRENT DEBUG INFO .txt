@@ -1,14 +1,8 @@
-1) It appears that when setting weights, [line 270] actor_target weights are simply being set to actor_main weights.
-
-2) Web Console Log info: 
+1) Web Console Log info: 
 	(TD3script.js)
-	2a)[Line 257]: targets1: weights from actor_target.model.
-
-	2b)[Line 260]: mainWeights1: weights from actor_main.model.
-
-	2c)[Line 271]: actor_main.model.getWeights(): The model after setWeights().
-
-	2d)[Line 630] A notice after each step saying the reward and average reward.
+	
+	1a)[Line 630] A notice after each step saying the reward and average reward.
 
 	(game.js)
-	2e)[Line 58] A notice saying "TD3 Complete" when it runs all the way through without errors
+
+	1b)[Line 58] A notice saying "TD3 Complete" when it runs all the way through without errors
