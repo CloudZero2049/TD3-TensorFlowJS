@@ -1,0 +1,13 @@
+[CURENT WORK]
+
+1) Trying to find out why agent isn't learning. Reguardless of iterations, the agent maintains the same negative reward score, even though sometimes he gains some points.
+
+2) next: trace the choices the agent is making.
+
+[CHANGE LOG]
+
+1)game.js[line 57]: Added console.info(tf.memory()); 
+
+2) changed all basic numbers into scalers durring math because .mul() and .add() requires tensors.
+
+3) Add creation of deep copies of objects to prevent reference contamination.
