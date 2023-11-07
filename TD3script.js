@@ -98,10 +98,7 @@ class Critic {  // it is possible to combine the 4 critics into 2 critics suppos
   call(inputstate, action) { // feed forward
     //console.log(`inputstate: ${inputstate}`);
     //console.log(`action: ${action}`);
-    
-    //const x = this.model.predict(tf.concat([inputstate, action], 1)); // .fit? // -1 causes stack, 1 works if same shape?
-    //const reshapedInputstate = inputstate.reshape([inputstate.shape[0], 1]); // axis 1
-
+   
    // STEP 10b: we concatinate the input state[6] with action
    // Repeat the observation state tensor for each example in the batch
   const batchSize = action.shape[0];
@@ -114,10 +111,7 @@ class Critic {  // it is possible to combine the 4 critics into 2 critics suppos
     const x = this.model.predict(catTensor);
     
     return x;
-   // const x = this.f1.apply(tf.concat([inputstate, action], 1));
-   // const y = this.f2.apply(x);
-   // const z = this.v.apply(y);
-   // return z; // includes optimizer here in video, and checkpoints
+  
   }
 }
 
@@ -132,51 +126,27 @@ class Actor {
   }
   
   call(stateTensor) {
-    //console.log(`State at actor call: ${stateTensor}`);
-   // let reshapedState = tf.reshape(state,[null,2]);
+
     // if action bounds not +-1 can multiply here
     const x = this.model.predict(stateTensor);
-    //let shape = x.shape // .fit would give training data to see if its over fit or under fit
-    //let reshapedX = tf.reshape(x,[1,2]); 
-    
     
     return x;
-   // const x = this.f1.apply(state);
-   // const y = this.f2.apply(x);
-   // const z = this.mu.apply(y);
-   // return z;
+   
   }
 }
 //alpha,beta,input_dims,tau,env,gamma,update_actor_interval = 2, warmup = 1000, n_actions=2,max_size=1000000,layer1_size=400,layer2_size=300, batch_size=100,noise=0.1 (video)
 //min-max actions is because of noise (video)
-function lossFunction1() { 
-  const criticValue = agent.critic_main.call(statesTensor, actionsTensor).squeeze([1]); // I put these here because of compile init...
-  const criticLoss1 = tf.losses.meanSquaredError(targetValues, criticValue);            // custom loss function *shrugs*
-  const criticMean = criticLoss1.mean();
- 
-  return criticMean;
-};
-function lossFunction2() { 
-  const criticValue2 = agent.critic_main2.call(statesTensor, actionsTensor).squeeze([1]);
-  const criticLoss2 = tf.losses.meanSquaredError(targetValues, criticValue2);
-  const criticMean2 = criticLoss2.mean();
-  
-  return criticMean2;
-};
-function lossFunction3() {
-  const actorLoss = tf.mean(agent.critic_main.call(statesTensor, agent.actor_main.call(statesTensor)).neg());
-  return actorLoss;
-}
+
 // alpha = learning rate for actor (.001), beta = learning rate for critic (.002), gamma = discount factor
 class Agent {
-  constructor(n_actions = 2, inputShape = 2, alpha = 0.001, beta = 0.002, gamma = 0.99, tau = 0.005, warmup = 5, RBufferSize = 100000) {                           
+  constructor(n_actions = 2, inputShape = 2, alpha = 0.001, beta = 0.002, gamma = 0.99, tau = 0.005, warmup = 150, RBufferSize = 100000) {                           
     this.actor_main = new Actor(n_actions);
     this.actor_target = new Actor(n_actions);
     this.critic_main = new Critic(inputShape);
     this.critic_main2 = new Critic(inputShape);
     this.critic_target = new Critic(inputShape);
     this.critic_target2 = new Critic(inputShape);
-    this.batch_size = 16;
+    this.batch_size = 32;
     this.n_actions = n_actions;
     this.a_opt = tf.train.adam(alpha);
     this.c_opt1 = tf.train.adam(beta);
@@ -193,20 +163,11 @@ class Agent {
 
     //video sets noise here. and update_network_parameters(tau=1)
 
-   // targets only???
-   // this.actor_main.model.compile({optimizer: this.a_opt, loss: lossFunction3}); 
-    //this.critic_main.model.compile({optimizer: this.c_opt1, loss: lossFunction1});
-   // this.critic_main.model.compile({optimizer: this.c_opt2, loss: lossFunction2});
-    // DOESNT USE MSE? self.actor_target.compile(optimizer=self.a_opt)
-    this.critic_target.model.compile({optimizer: this.c_opt1, loss: lossFunction1});
-    this.critic_target2.model.compile({optimizer: this.c_opt2, loss: lossFunction2});
-    this.actor_target.model.compile({optimizer: this.a_opt, loss: lossFunction3}); 
+    this.critic_target.model.compile({optimizer: this.c_opt1, loss: tf.losses.meanSquaredError}); // 
+    this.critic_target2.model.compile({optimizer: this.c_opt2, loss: tf.losses.meanSquaredError}); // 
+    this.actor_target.model.compile({optimizer: this.a_opt, loss: tf.losses.meanSquaredError}); // 
     
     //this.actor_target.model.compile({ optimizer: this.a_opt,loss: tf.losses.meanSquaredError,metrics: ['mse'], }); 
-    //this.critic_target.model.compile({ optimizer: this.c_opt1,loss: tf.losses.meanSquaredError,metrics: ['mse'], });
-    //this.critic_target2.model.compile({ optimizer: this.c_opt2,loss: tf.losses.meanSquaredError,metrics: ['mse'], });
-
-
     //this.updateTarget(1); // tau = 1 for first update (from DDPG video)
   }
 
@@ -222,7 +183,7 @@ class Agent {
   // STEP 1b: get actions from actor_main
   const actions = this.actor_main.call(stateTensor);
   //let aShape = actions.shape;
-  //console.log(`actions Actor: ${actions}, with shape: ${aShape}`);
+  //console.log(`Actor actions: ${actions}`); // , with shape: ${aShape}
 
   if (!evaluate) { // meaning it is training
     const noise = tf.randomNormal([this.n_actions], 0.0, 0.1); // video uses mu, adds noise
@@ -234,7 +195,7 @@ class Agent {
   // we clip actions because noise can cause them to go outside the bounds
   const clippedActions = tf.clipByValue(actions, this.min_action, this.max_action); 
   const scaledActions = tf.mul(clippedActions, this.max_action); // mac_action isn't tensor, but is 1 anyway
-  //console.log(scaledActions); // --> full tensor
+ // console.log(scaledActions); // --> full tensor
  //console.log(scaledActions.arraySync()); //--> [4]
   // self.time_step += 1 (video)
   // Step 1c: returned action is the first element of a flatened clipped action array
@@ -242,7 +203,6 @@ class Agent {
 }); // end tidy
 return returnValue;
 }
-
 
   savexp(state, next_state, action, done, reward) { // "remember" (video)
     this.memory.storexp(state, next_state, action, done, reward);
@@ -306,17 +266,7 @@ return returnValue;
     } // end loop
 
     this.critic_target2.model.setWeights(weights3);
-    /*
-    const weights3 = [];
-    const targets3 = this.critic_target2.model.getWeights(true);
-    const mainWeights3 = this.critic_main2.model.getWeights(true);
-    for (let i = 0; i < mainWeights3.length; i++) {
-      weights3.push(
-        tf.add(tf.mul(mainWeights3[i], tau), tf.mul(targets3[i], 1 - tau))
-      );
-    }
-    this.critic_target2.model.setWeights(weights3);
-    */
+   
 
     //video does some weird dictionary stuff here
   
@@ -338,7 +288,7 @@ return returnValue;
     const rewardsTensor = tf.tensor(rewards);
     const actionsTensor = tf.tensor([actions]); //actions needs [] here for some reason
     //console.log(`statesTensor:${statesTensor}, nextStatesTensor:${nextStatesTensor}, rewardsTensor${rewardsTensor}, actionsTensor:${actionsTensor}`);
-    //done = T.tensor(done).to(self.critic_1.device) // video has enabled!
+    //done = T.tensor(done).to(self.critic_1.device) // video has enabled?
     //dones = tf.convert_to_tensor(dones, dtype= tf.bool) 
 
      //targetActions = targetActions.mul(this.max_action).clipByValue(this.min_action, this.max_action);
@@ -351,9 +301,6 @@ return returnValue;
     //target = reward + self.gamma*critic_value_  (video)
     //target = target.view(self.batch_size, 1) (video) doesnt have .mul(dones)
     // video zeros the optimizers here
-    
-     
-      //console.log(`TESTING 1:s: ${state},a: ${action}`);
 
       // STEP 10a: the two critic models take each the couple (s, a) as input and return Q-values as outputs: Q1(s, a), Q2(s, a)
       // STEP 11: we compute the loss coming from the two Critic models: criticLoss = MSE_Loss(Q1(s, a), Qt) + MSE_Loss(Q2(s, a), Qt)
@@ -364,23 +311,26 @@ return returnValue;
       // STEP 6: We add Gaussian noise to the next action a` and we clamp it in a range of values supported by environment
       targetActions.add(tf.clipByValue(tf.randomNormal(targetActions.shape, 0.0, 0.2), -0.5, 0.5)); // video 2 uses actionsTensor?
       targetActions = tf.mul(agent.max_action, tf.clipByValue(targetActions, agent.min_action, agent.max_action)); 
+      //console.log(`target actions: ${targetActions}`);
       // STEP 7: The two Critic targets take each the couple (s`, a`) as input and return two Q-values as outputs
       const targetNextStateValues = agent.critic_target.call(nextStatesTensor, targetActions).squeeze([1]);
       const targetNextStateValues2 = agent.critic_target2.call(nextStatesTensor, targetActions).squeeze([1]);
       // STEP 8: we keep the minimum of the two Q-values. min(Qt1, Qt2)
       const nextTargetStateValue = tf.minimum(targetNextStateValues, targetNextStateValues2);
+      //console.log(`nextTargStateV: ${nextTargetStateValue}`);
+      //console.log(`rewardsTensor: ${rewardsTensor}`);
+      //console.log(`dones: ${dones}`);
       // STEP 9: we get the final target of the two Critic models (Qt = r + gamma * min(Qt1, Qt2) * dones, where gamma is the discount factor)
-      // video 2 detaches the target_q values from the computational graph of the tensor (a PyTorch trick): * (1-dones).detach()
-      const targetValues = rewardsTensor.add(nextTargetStateValue.mul(tf.scalar(agent.gamma)).mul(tf.scalar(dones)));
+      const targetValues = rewardsTensor.add(nextTargetStateValue.mul(tf.scalar(agent.gamma).mul(tf.scalar(dones))));
       //console.log(`targetValues: ${targetValues}`);
       // says we have to squeeze because we have batch dimentino, and doesn't learn if you past that through.
       const criticValue = agent.critic_main.call(statesTensor, actionsTensor).squeeze([1]) // squeese? says wont learn otherwise
       //console.log(`criticValue: ${criticValue}`);
       const criticLoss1 = tf.losses.meanSquaredError(targetValues, criticValue);
       //console.log(`crit Loss1: ${criticLoss1}`); // may be working properly
-      const criticMean = criticLoss1.mean(); // criticLoss1 return full tensor, this gives mean of output
+      //const criticMean = criticLoss1.mean(); // criticLoss1 return full tensor, this gives mean of output
       //console.log(`TESTING loss: ${criticMean}`);
-      return criticMean;
+      return criticLoss1;
     };
 
     function lossFunction2() { 
@@ -392,65 +342,28 @@ return returnValue;
        const targetNextStateValues = agent.critic_target.call(nextStatesTensor, targetActions).squeeze([1]);
        const targetNextStateValues2 = agent.critic_target2.call(nextStatesTensor, targetActions).squeeze([1]);
        const nextTargetStateValue = tf.minimum(targetNextStateValues, targetNextStateValues2);
-       const targetValues = rewardsTensor.add(nextTargetStateValue.mul(tf.scalar(agent.gamma)).mul(tf.scalar(dones)));
+       const targetValues = rewardsTensor.add(nextTargetStateValue.mul(tf.scalar(agent.gamma).mul(tf.scalar(dones))));
 
       const criticValue2 = agent.critic_main2.call(statesTensor, actionsTensor).squeeze([1]) // squeese? says wont learn otherwise?
       const criticLoss2 = tf.losses.meanSquaredError(targetValues, criticValue2);
-      const criticMean2 = criticLoss2.mean(); // criticLoss1 return full tensor, this gives mean of output
+      //const criticMean2 = criticLoss2.mean(); // criticLoss1 return full tensor, this gives mean of output. bad?
       //console.log(`TESTING loss2: ${criticMean2}`);
-      return criticMean2;
+      return criticLoss2
+      //return criticMean2;
     };
 
-
-
-    
-   // const gFun1 = tf.grad(lossFunction1);
-   // const grads1 = gFun1(statesTensor); //gWeights1 . Output needs to be the same
-    // The shape of dy passed in grad(f)(x, dy) must match the shape returned by f(x) Shapes  and 1 must match
-    //console.log(grads1);
-
-    //console.log("Before compute");
-    //console.log(this.c_opt1.getWeights());
+ 
     // STEP 12: we backpropigate the Critic loss and update the parameters of the critic models through optiizers
     const gWeights1 = this.critic_main.model.getWeights(true)//.map(tf.clone);
     //console.log(`gWeights1: ${gWeights1}`);
-    this.c_opt1.computeGradients(lossFunction1,gWeights1);
-    //let computedgrads1 = this.c_opt1.computeGradients(lossFunction1,gWeights1);  // do we need to .step() optimizers?
+    //this.c_opt1.computeGradients(lossFunction1,gWeights1);
+    let computedgrads1 = this.c_opt1.computeGradients(lossFunction1,gWeights1);  // do we need to .step() optimizers?
     //console.log(computedgrads1);
-    //this.c_opt1.applyGradients(computedgrads1);
-    
-    const gWeights2 = this.critic_main2.model.getWeights(true)//.map(tf.clone);
-    this.c_opt2.computeGradients(lossFunction2,gWeights2);
-    //let computedgrads2 = this.c_opt2.computeGradients(lossFunction2,gWeights2);
-    //this.c_opt2.applyGradients(computedgrads2);
+    this.c_opt1.applyGradients(computedgrads1.grads);
 
-    // .applyGradients seams to be for external computation? 
-    //Optimizer.computeGradients(f, varList?);
-   // const gFun2 = tf.grad(lossFunction2);
-   // const grads2 = gFun1(statesTensor); // ?
-    //const nextStatesTensor = tf.tensor(nextStates);
-   // let crit1_weightsT = tf.tensor(this.critic_main.model.getWeights(true));
-   // let crit2_weightsT = tf.tensor(this.critic_main2.model.getWeights(true));
-    //zip not on tensors? 
-//const gradients = trainableWeights.map(weight => tf.fill(weight.shape, 1.0));
-    /*
-    // Assuming that crit1_weights is an array of tensors and grads1 is an array of gradient tensors
-    const zippedGradients = crit1_weights.map((weight, index) => ({
-      grads: grads1[index], // Make sure that grads1 is indexed by the same order as crit1_weights
-      weights: weight,
-      }));
-      // Use tf.data.zip to create a dataset of pairs (gradients, weights)
-      const zippedDataset = tf.data.zip(zippedGradients);
-      // Apply the gradients using the optimizer
-        this.c_opt1.applyGradients(zippedDataset);
-    */
-    //let dataSet1a = tf.data.array([grads1])
-    //let dataSet1 = [{grads: grads1, weights: crit1_weights}];
-    //let dataSet2 = [{grads2: grads2, weigths2: crit2_weights}];
-    //console.log(dataSet1);
-    // update optimizers
-    //this.c_opt1.applyGradients(tf.data.zip([grads1,crit1_weightsT])); // HOPE I DON"T STILL NEED ZIP()!
-   // this.c_opt2.applyGradients(tf.data.zip([grads2,crit2_weightsT])); 
+    const gWeights2 = this.critic_main2.model.getWeights(true)//.map(tf.clone);
+    let computedgrads2 = this.c_opt2.computeGradients(lossFunction2,gWeights2);
+    this.c_opt2.applyGradients(computedgrads2.grads);
   
     this.trainstep += 1;
 
@@ -468,20 +381,10 @@ return returnValue;
       }
       
       const gWeights3 = this.actor_main.model.getWeights(true)//.map(tf.clone);
-      this.a_opt.computeGradients(lossFunction3,gWeights3);
-      //let computedgrads3 = this.a_opt.computeGradients(lossFunction3,gWeights3);
-      //this.a_opt.applyGradients(computedgrads3);
-      // Video 2 updates the weigths here (every 2 instead dof 1??)
-        /*
-        const actorLoss = tf.mean(this.critic_main.call(statesTensor, this.actor_main.call(statesTensor)).neg());
-        actorLoss = tf.math.reduce_mean(actorLoss);
-        
-        const grads3 = tf.grads((actorLoss) => {
-            return this.actor_main.call(statesTensor);
-        })([statesTensor]); // ?
-
-        this.a_opt.applyGradients(tf.data.zip(grads3, this.actor_main.model.trainableWeights)); // model.getWeights()?
-        */
+      let computedgrads3 = this.a_opt.computeGradients(lossFunction3,gWeights3);
+      //console.log(computedgrads3.grads);
+      this.a_opt.applyGradients(computedgrads3.grads);
+     
        // STEP 14/15... updating weights every two iterations. moved here because the original paper says to.
       this.updateTarget(); // same as self.update_netowrk_parameters() in video
       
@@ -503,29 +406,19 @@ return returnValue;
 function envReset() {
   // Initialize or reset the game environment and entities
 
-  //const obsSpace = [observationSpace];
-  //let reward = 0;
-  //let isDone = false;
-  // Add entities to the initial state based on observation space
-  
-  // Return the initial state
-  //observationSpace.stateSpace = Array.from(observationSpace.defaults);
-
  // numbersCopy = JSON.parse(JSON.stringify(nestedNumbers)); // DEEP COPY ARRAY CODE
   observationSpace.resetTarget();
   observationSpace.stateSpace = JSON.parse(JSON.stringify(observationSpace.defaults));
   observationSpace.next_stateSpace = JSON.parse(JSON.stringify(observationSpace.defaults));
-  //observationSpace.next_stateSpace = Array.from(observationSpace.defaults);
+ 
   return observationSpace.stateSpace
-  //return obsSpace;
-  //return { next_state: obsSpace, reward: reward, done: isDone };
+  
 }
 
 function envStep(action) {
   const playerSpeed = 5;  // temp hardcode 
   const os = observationSpace.next_stateSpace;
 
-  //console.log(os); // not giving right numbers?
   //console.log(action);
    // Calculate new positions of entities, resolve collisions, etc.
   // move X
@@ -535,12 +428,6 @@ function envStep(action) {
   if (action[1] < 0) {os[0][1] -= playerSpeed}
   else if (action[1] > 0) {os[0][1] += playerSpeed}
 
-  // Update the game environment based on the action
-  // Ensure moveX and moveY are within actionSpace bounds
-  //moveX = Math.max(actionSpace.moveX.low, Math.min(actionSpace.moveX.high, moveX));
-  //moveY = Math.max(actionSpace.moveY.low, Math.min(actionSpace.moveY.high, moveY));
-
-  // Calculate the reward based on the game's reward system
   //const reward = calculateReward();
   let isDone = false;
   let reward = 0;
@@ -557,38 +444,28 @@ function envStep(action) {
 
   //let zomDist = utilsAI.distance(os[0][0],os[0][1],os[0][2],os[0][3]);
   let civDist = utilsAI.distance(os[0][0],os[0][1],os[0][4],os[0][5]); 
+  //console.log(observationSpace.targetDist);
   //console.log(`civ Dist: ${civDist}`);
 
-
-  if (civDist >= observationSpace.targetDist) {reward -= 10}
-  else {reward += 10;}
+  if (civDist >= observationSpace.targetDist) {reward -= 35}
+  else {reward += 35;}
   observationSpace.targetDist = JSON.parse(JSON.stringify(civDist));
-  /*
-  if (agent.trainstep >= 20) {
-    if (!isDone) {
-       
-      if (zomDist < civDist) {reward -= 5}
-      else {reward += 5}
-    }
-   isDone = true;
-  }
-  */
+  //console.log(observationSpace.targetDist);
+ 
   //let reward = agent.trainstep;
   const next_State = JSON.parse(JSON.stringify(observationSpace.next_stateSpace));
-  //const nextState = tf.tensor([1]);
+
   // Return the next state, reward, and whether the game is done
   //const nextState = getGameState(); // Implement this to return the game state
   return { next_state: next_State, reward: reward, done: isDone };
 }
 
 // Math.seedrandom() ?
-//tf.random.set_seed(336699);
-//tf.random.set_seed();
 
 const agent = new Agent(actionSpace.numberActions,observationSpace.stateSpace.length); 
   //console.log("At creation");
   //console.log(agent.c_opt1.getWeights());
-const episodes = 5; ///100 - 2000 // batches are 16 // 224
+const episodes = 50; ///100 - 2000 // check batches size
 const epReward = [];
 const totalAvgReward = [];
 let target = false;
@@ -627,7 +504,8 @@ function main() {  // Removed async   //
       state = JSON.parse(JSON.stringify(observationSpace.next_stateSpace)); // DEEP COPY
       
       totalReward += reward;
-      //console.log(`T Reward: ${totalReward}`);
+
+      //console.log(`Reward: ${totalReward}`);
       if (n_steps >= agent.batch_size) {batchSteps = true}
       n_steps++
       
