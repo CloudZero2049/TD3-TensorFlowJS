@@ -34,6 +34,11 @@ let Game = {
             if (!this.entities[i]) {continue}
             this.entities[i].draw();
         }
+        // Dummy Player Placeholder
+        ctx.beginPath;
+        ctx.fillStyle = "blue";
+        ctx.fillRect(50,50,20,20);
+
         startPlayerButton.disabled = false;
         startTD3Button.disabled = false;
         //this.start();
@@ -54,7 +59,7 @@ let Game = {
             this.loadPlayer();
             animate(); 
         }
-
+        console.info(tf.memory());
         console.info("TD3 Complete");
     },
     stop: function() {
