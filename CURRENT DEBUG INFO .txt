@@ -1,8 +1,8 @@
 1) Web Console Log info: 
 	(TD3script.js)
 	
-	1a)[Line 630] A notice after each step saying the reward and average reward.
+	1a)[Line 520] A notice after each step saying the reward and average reward.
 
 	(game.js)
-
-	1b)[Line 58] A notice saying "TD3 Complete" when it runs all the way through without errors
+	1b)[Line 62] Running tf.memory() to track number of tensors (track memory leaks)
+	1c)[Line 63] A notice saying "TD3 Complete" when it runs all the way through without errors
