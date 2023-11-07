@@ -2,12 +2,22 @@
 
 1) Trying to find out why agent isn't learning. Reguardless of iterations, the agent maintains the same negative reward score, even though sometimes he gains some points.
 
-2) next: trace the choices the agent is making.
+2) problem seems to remain even after I suposedly fixed the updating of models.
+
+3) next: trace the choices the agent is making. The actor_targetactions are changing but only by very small amounts (to five decimal places, 0.99995). I looks like the agent ends up choosing the same action every time.
 
 [CHANGE LOG]
 
-1)game.js[line 57]: Added console.info(tf.memory()); 
+[11/5/23] game.js[line 57]: Added console.info(tf.memory()); 
 
-2) changed all basic numbers into scalers durring math because .mul() and .add() requires tensors.
+[11/5/23] changed all basic numbers into scalers durring math because .mul() and .add() requires tensors.
 
-3) Add creation of deep copies of objects to prevent reference contamination.
+[11/5/23] Add creation of deep copies of objects to prevent reference contamination.
+
+[11/6/23] Added a "dummy" visual representation of where the agent/player starts.
+
+[11/6/23] Hopefully fixed the updating of all models (applying gradients and so forth). 
+
+[11/6/23] set target model compile loss to MSE (it doesn't matter from what I understand, because I'm using custom training and loss)
+
+[11/6/23] erased some unused comment code
