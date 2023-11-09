@@ -61,6 +61,7 @@ let Game = {
         }
         console.info(tf.memory());
         console.info("TD3 Complete");
+        startTD3Button.disabled = false;
     },
     stop: function() {
         if (!this.running) {return}
@@ -126,7 +127,6 @@ function animate() {
     requestAnimationFrame(animate);
    
 }
-
 
 
 function loadEnts() {
