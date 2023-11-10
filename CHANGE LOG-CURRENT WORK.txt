@@ -1,12 +1,14 @@
 [CURENT WORK]
-! CREATED A NEW TEMPORARY BRANCH FOR THE BATCH SAMPLE UPDATE, ANYTHING AFTER 11/6/23 IS ON NEW BRANCH!
 
 1) Trying to find out why agent isn't learning.
 
-2) next: trace the choices the agent is making. The actor actions are changing but only by very small amounts (to five decimal places, 0.99995). Then quickly converge on -1 to 1. I looks like the agent ends up choosing the same action every time.
+2) The actor actions are changing but only by very small amounts (to five decimal places, 0.99995). Then quickly converges on -1 or 1, something like [-1,1]. I looks like the agent ends up choosing the same action every time even though it's being negativly rewarded for it.
 
-4) I think I narrowed down the issue to the training loop for sure.
+3) running 300 episodes (100 batch size, ~200 warm-up) had no effect.
 
+3) I'm curiouse if the action clipping is hiding details on this.
+
+3) next: trace the choices the agent is making. 
 
 [CHANGE LOG]
 
@@ -40,3 +42,9 @@
 5) fixed min_action and max_action not using [0] on assignment
 
 6) created a temporary new branch for the Batch Sample update
+
+[11/9/23]
+
+1) discovered that the line actions.add(noise) wasn't doing the math, so I re-wrote everything like the following because I know it works: actions = tf.add(actions, noise);
+
+2) agent now must break -0.5 to 0.5 threashhold to move (may be temporary we'll see).
