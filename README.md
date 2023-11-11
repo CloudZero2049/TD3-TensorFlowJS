@@ -6,7 +6,7 @@
 3) The goal of this project is to create a working Twin Delayed Deep Deterministic Policy Gradient (TD3) (similar to DDPG), written in JavaScript with the only dependency being TensorFlow JS. It is meant to be a simple blueprint that the community can use to create other projects with TensorFlow JS. The TD3 will use a simple environment containing an agent/player, a zombie, and a civilian. The environment is based on HTML5 Canvas. (x:0,y:0 in top left corner)
 	2a) The agent has 2 actions (move on the x coordinate, and y coordinate).
 
-	2b) The Observation Space has 6 array locations representing the x,y coordinates of the agent, zombie, and civilian. [ax,ay,zx,zy,cx,cy]
+	2b) The Observation Space has 7 array locations representing the x,y coordinates of the agent, zombie, and civilian, plus one location at the end representing the distance of the agent from the civillian. [[ax,ay,zx,zy,cx,cy,dist]]
 
 	2c) Agent gets a positive reward for moving towards (and touching) the civilian, and a negative reward for moving away from civilian (and also for touching the zombie).
 
