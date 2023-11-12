@@ -6,11 +6,11 @@
 3) The goal of this project is to create a working Twin Delayed Deep Deterministic Policy Gradient (TD3) (similar to DDPG), written in JavaScript with the only dependency being TensorFlow JS. It is meant to be a simple blueprint that the community can use to create other projects with TensorFlow JS. The TD3 will use a simple environment containing an agent/player, a zombie, and a civilian. The environment is based on HTML5 Canvas. (x:0,y:0 in top left corner)
 	2a) The agent has 2 actions (move on the x coordinate, and y coordinate).
 
-	2b) The Observation Space has 7 array locations representing the x,y coordinates of the agent, zombie, and civilian, plus one location at the end representing the distance of the agent from the civillian. [[ax,ay,zx,zy,cx,cy,dist]]
+	2b) The Observation Space has 4 array locations representing the x,y coordinates of the agent, the distance of the agent from the civillian, and angle of player to civilian. [[ax,ay,civ-distance,civ-angle]]. I've temporarily remove x,y coords of zombie and civilian until they actualy move because they were static numbers.
 
 	2c) Agent gets a positive reward for moving towards (and touching) the civilian, and a negative reward for moving away from civilian (and also for touching the zombie).
 
-	2d) Canvas animation will remain disabled when running TD3 until it is stable and confirmed to be working properly, and without memory leaks. A "start player" button has been included that will animate while a human moves the player with WASD keys. The 0 key will stop animation (good for looping errors), and the 9 key will start it.
+	2d) Actual canvas animation will remain disabled when running TD3 until it is stable and confirmed to be working properly, and without memory leaks. Currently there is a visual representation that shows the paths the agent took. A "start player" button has been included that will animate while a human moves the player with WASD keys. The 0 key will stop animation (good for looping errors), and the 9 key will start it.
 
 
 4) This project began by using ChatGPT(v.3.5) to help me translate code from Python into JavaScript that utilizes TensorFlow JS. I could not find any examples of TD3 on the internet in JavaScript, this is the first for all I know. I am not a professional with Python or TensorFlow at the time of writing.
