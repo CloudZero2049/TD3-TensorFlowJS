@@ -14,18 +14,19 @@ const rewardTextArea = document.getElementById("rewardTextArea");
 const punishTextArea = document.getElementById("punishTextArea");
 
 
-let player;
+let player, civ1;
 
 let Game = {
     running: false, 
     user: "TD3",
-    width: 1000,
-    height: 1000,
+    width: 600,
+    height: 500,
     entities: [],
     player: {},
     entityCounter: 0,
     rewards: 0,
     punishments: 0,
+    agentMoves: [],
     init: function() {
         this.drawBG();
         loadEnts();
@@ -35,9 +36,9 @@ let Game = {
             this.entities[i].draw();
         }
         // Dummy Player Placeholder
-        ctx.beginPath;
-        ctx.fillStyle = "blue";
-        ctx.fillRect(50,50,20,20);
+        //ctx.beginPath;
+       // ctx.fillStyle = "blue";
+       // ctx.fillRect(150,150,20,20);
 
         startPlayerButton.disabled = false;
         startTD3Button.disabled = false;
@@ -53,10 +54,11 @@ let Game = {
         startTD3Button.disabled = true;
         
         if (this.user == "TD3") {
+            player.user = "TD3";
             main()
         }
         else if(this.user == "player") {
-            this.loadPlayer();
+            player.user = "human";
             animate(); 
         }
         console.info(tf.memory());
@@ -87,14 +89,17 @@ let Game = {
         punishTextArea.innerHTML = `Punishments: ${this.punishments}`;
     },
     loadPlayer: function() {
-        Game.entities.push(player = new Player(++Game.entityCounter,50,50,"human"));
+       // Game.entities.push(player = new Player(++Game.entityCounter,150,150,"human"));
+    },
+    loadAgent: function() {
+       // Game.entities.push(player = new Player(++Game.entityCounter,150,150,"TD3"));
     }
 } 
 
-myCanvas.width = 600;
-myCanvas.height = 600;
-bgCanvas.width = 600;
-bgCanvas.height = 600;
+myCanvas.width = Game.width;
+myCanvas.height = Game.height;
+bgCanvas.width = Game.width;
+bgCanvas.height = Game.height;
 
 function animate() {
     if (!Game.running) {console.info("Game Stopped");return}
@@ -127,11 +132,53 @@ function animate() {
     requestAnimationFrame(animate);
    
 }
+function animateAgent() {
+    ctx.clearRect(player.x-1,player.y-1,player.width+2,player.height+2);
+    let c1 = 0;
+    let c2 = 0;
+   for (let i = 0; i < Game.agentMoves.length; i++) {
+    let moveX = Game.agentMoves[i][0];
+    let moveY = Game.agentMoves[i][1];
+    //console.log(`moveX: ${moveX}, moveY: ${moveY }`);
+    //let r = Math.floor(Math.random() * (255 + 1))
+    //let g = Math.floor(Math.random() * (255 + 1))
+    //let b = Math.floor(Math.random() * (255 + 1))
+    let r,g,b;
+    
+    switch(c1){
+        case 0: r = 255; g = 0; b = 0
+        break;
+        case 1: r = 0; g = 255; b = 0
+        break;    
+        case 2: r = 0; g = 0; b = 255
+        break; 
+      }
 
+    let rgb = `rgb(${r},${g},${b})`;
+    c2++
+    if (c2 > agent.batch_size) {c1++; c2 = 0;}
+    if (c1 > 2) {c1 = 0}
+
+    ctxBG.beginPath();
+    ctxBG.arc(moveX, moveY, 2, 0, 2 * Math.PI);
+    ctxBG.fillStyle = rgb;
+    ctxBG.fill();
+
+   }
+
+    player.x = Game.agentMoves[Game.agentMoves.length -1][0];
+    player.y = Game.agentMoves[Game.agentMoves.length -1][1];
+    
+    player.draw();
+}
+// map width: 600,
+// mapheight: 500,
+// player: 150, 150
+// civ1: 400, 150
 
 function loadEnts() {
-
-Game.entities.push(new Civilian(++Game.entityCounter,90,90));
+Game.entities.push(player = new Player(++Game.entityCounter, 300, 50, "TD3"));
+Game.entities.push(civ1 = new Civilian(++Game.entityCounter, 200, 200));
 Game.entities.push(new Zombie(++Game.entityCounter,10,10));
 //zombies.push(new Zombie(++game.entityCounter,300,300,"medium"));
 }
