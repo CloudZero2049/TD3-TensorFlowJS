@@ -6,22 +6,36 @@ const utilsAI = {
   distance: function(x1,y1,x2,y2) {
     return Math.floor(Math.hypot(x2 - x1, y2 - y1));
   },
+  angle: function(from,to) { // [x,y], [x,y]
+      let fX = from[0];
+      let fY = from[1];
+      let tX = to[0];
+      let tY = to[1];
+    
+      let dx = tX - fX;
+      let dy = tY - fY;
+    
+      let angle = Math.atan2(dx, dy);
+      return angle;
+    
+  }
 }
 
 //observationSpace.stateSpace.length
 const observationSpace ={ 
   //resetTarget: function() {observationSpace.targetDist =  utilsAI.distance(observationSpace.defaults[0][0],observationSpace.defaults[0][1],observationSpace.defaults[0][4],observationSpace.defaults[0][5]);},
   //targetDist: 28, // adjusts from function
-  //[agentX,agentY,zombieX,zombieY,civilianX,civilianY,dist to civ]
-  defaults: [[50,50,30,30,70,70,28]],  // IF THESE (x,y) CHANGE, CHANGE IN CANVAS ALSO!
-  stateSpace: [[50,50,30,30,70,70,28]],
-  next_stateSpace: [[50,50,30,30,70,70,28]],
+  //[agentX,agentY,zombieX,zombieY,civilianX,civilianY,dist to civ, angle to civ]
+  civLoc:[civ1.x, civ1.y],
+  defaults: [[player.x, player.y, 28, 1.56]],  // IF THESE (x,y) CHANGE, CHANGE IN CANVAS ALSO!
+  stateSpace: [[player.x, player.y, 28, 1.56]],
+  next_stateSpace: [[player.x, player.y, 28, 1.56]],
 }
 //actionSpace.numberActions
 //actionSpace.shape[1]
 const actionSpace = {
   numberActions: 2,
-  shape: [1,2], // not used
+  shape: [2], // not used
   actions: [0,0], // not used
   low: [-1,-1],
   high: [1,1]
@@ -98,9 +112,9 @@ class RBuffer {
 class Critic {  // it is possible to combine the 4 critics into 2 critics supposedly
   constructor(inputShape) { // completely different in video. checkpoints models to files here
     this.model = tf.sequential();
-    this.model.add(tf.layers.dense({ inputShape: [9], units: 400, activation: 'relu', kernelInitializer: 'randomNormal'})); // state_dim + action_dim (video 2)
-    this.model.add(tf.layers.dense({ units: 300, activation: 'relu', kernelInitializer: 'randomNormal' }));
-    this.model.add(tf.layers.dense({ units: 1, activation: null, kernelInitializer: 'randomNormal' })); // Output to 1 Q value
+    this.model.add(tf.layers.dense({ inputShape: [inputShape], units: 400, activation: 'relu', dtype: 'float32', kernelInitializer: 'randomNormal'})); // state_dim + action_dim (video 2)
+    this.model.add(tf.layers.dense({ units: 300, activation: 'relu', dtype: 'float32', kernelInitializer: 'randomNormal' }));
+    this.model.add(tf.layers.dense({ units: 1, activation: null, dtype: 'float32', kernelInitializer: 'randomNormal' })); // Output to 1 Q value
   }
 
   call(inputstate, action) { // feed forward
@@ -116,7 +130,7 @@ class Critic {  // it is possible to combine the 4 critics into 2 critics suppos
   // Concatenate the two tensors along the last axis (axis 1)
     const catTensor = tf.concat([inputstate, action], 1);
     //let oldCat = inputstate.concat(action); doesn't work, says shape is different
-   
+   //const normalCat = normalizeData(catTensor);
    //console.log(`catTensor: ${catTensor.shape}`);
     const x = this.model.predict(catTensor);
     
@@ -126,20 +140,22 @@ class Critic {  // it is possible to combine the 4 critics into 2 critics suppos
 }
 //kernelInitializer: tf.randomNormal(shape)
 class Actor {
-  constructor(n_actions,inputShape=[7]) { // has alpha in constructor (video)
+  constructor(n_actions,inputShape) { // has alpha in constructor (video)
     this.model = tf.sequential();
-    this.model.add(tf.layers.dense({ inputShape: inputShape, units: 400, activation: 'relu', dtype: 'float32' })); // input state_dim (video 2)
-    this.model.add(tf.layers.dense({ units: 300, activation: 'relu', dtype: 'float32'  }));
-    this.model.add(tf.layers.dense({ units: n_actions, activation: 'tanh', dtype: 'float32' })); // output units: is number of actions/action space
+    this.model.add(tf.layers.dense({ inputShape: inputShape, units: 400, activation: 'relu', dtype: 'float32', kernelInitializer: 'randomNormal'  })); // input state_dim (video 2)
+    this.model.add(tf.layers.dense({ units: 300, activation: 'relu', dtype: 'float32', kernelInitializer: 'randomNormal'   }));
+    this.model.add(tf.layers.dense({ units: n_actions, activation: 'tanh', dtype: 'float32', kernelInitializer: 'randomNormal'  })); // output units: is number of actions/action space
     // from DDPG paper. pi - tangent hyperbolic, +-1
     // if action bounds are say +-2, multiply that by tanh function before predict/output
   }
   
   call(stateTensor) {
-    //console.log(`ST: ${stateTensor}`);
+    //console.log(`stateTensor: ${stateTensor}`);
     // if action bounds not +-1 can multiply here
-    const x = this.model.predict(stateTensor);
-    return x;
+    //const normalState = normalizeData(stateTensor);
+    const pred = this.model.predict(stateTensor);
+    //console.log(`x: ${x}`);
+    return pred;
    
   }
 }
@@ -148,17 +164,17 @@ class Actor {
 
 // alpha = learning rate for actor (.001), beta = learning rate for critic (.002), tau = target weight update rate (slow is good)
 //gamma = discount factor (0 is immediate rewards, 1 is long term rewards and possibly more exploration)
-//gamma = 0.99, alpha = 0.001
+//Phil: batch_size = 300, warmup = 1000, n_games 1000
 //n_actions = 2, cInputShape = 9, alpha = 0.001, beta = 0.002, gamma = 0.99, tau = 0.005, warmup = 50, RBufferSize = 100000
 class Agent {
-  constructor(n_actions = 2, cInputShape = 9, alpha = 0.001, beta = 0.002, gamma = 0.99, tau = 0.005, warmup = 50, RBufferSize = 100000) {                           
-    this.actor_main = new Actor(n_actions);
-    this.actor_target = new Actor(n_actions);
-    this.critic_main = new Critic(cInputShape);
-    this.critic_main2 = new Critic(cInputShape);
-    this.critic_target = new Critic(cInputShape);
-    this.critic_target2 = new Critic(cInputShape);
-    this.batch_size = 50;
+  constructor(n_actions = 2, inputShapeA = 4, inputShapeC = 6, alpha = 0.001, beta = 0.002, gamma = 0.99, tau = 0.005, warmup = 200, RBufferSize = 100000) {                           
+    this.actor_main = new Actor(n_actions,inputShapeA);
+    this.actor_target = new Actor(n_actions,inputShapeA);
+    this.critic_main = new Critic(inputShapeC);
+    this.critic_main2 = new Critic(inputShapeC);
+    this.critic_target = new Critic(inputShapeC);
+    this.critic_target2 = new Critic(inputShapeC);
+    this.batch_size = 25;
     this.n_actions = n_actions;
     this.a_opt = tf.train.adam(alpha);
     this.c_opt1 = tf.train.adam(beta);
@@ -174,7 +190,7 @@ class Agent {
     this.max_action = actionSpace.high[0];  // positive movement
 
     //video sets noise here. and update_network_parameters(tau=1)
-    this.critic_main.model.compile({optimizer: this.c_opt1, loss: tf.losses.meanSquaredError});
+    this.critic_main.model.compile({optimizer: this.c_opt1, loss: tf.losses.meanSquaredError}); // , loss: tf.losses.meanSquaredError
     this.critic_main2.model.compile({optimizer: this.c_opt2, loss: tf.losses.meanSquaredError}); 
     this.actor_main.model.compile({optimizer: this.a_opt, loss: tf.losses.meanSquaredError}); 
     this.critic_target.model.compile({optimizer: this.c_opt1, loss: tf.losses.meanSquaredError});
@@ -202,18 +218,16 @@ class Agent {
 
       return mu_prime
     */ 
+  
   const stateTensor = tf.tensor(state); // [] added again because of DDPG video, then again because CGPT
-  //const minTensor = tf.tensor(this.min_action);
-  //const maxTensor = tf.tensor(this.max_action);
-  //let shape = stateTensor.shape;
-  //console.log(`first state tensor: ${stateTensor}, with shape: ${shape}`);
+  //console.log(`state tensor: ${stateTensor}, with shape: ${stateTensor.shape}`);
   // STEP 1b: get actions from actor_main
   let actions = this.actor_main.call(stateTensor);
   //let reshapedActions = tf.reshape(tf.clone(actions),[2]);
   //console.log(`Actor actions: ${actions}, with shape: ${actions.shape}`); 
   //console.log(`reshapedActions: ${reshapedActions}, with shape: ${reshapedActions.shape}`); 
   if (!evaluate) { // meaning it is training
-    const noise = tf.randomNormal(actions.shape, 0.0, 0.1); // video uses mu, adds noise
+    const noise = tf.randomNormal(actions.shape, 0.0, 0.1); // video uses mu, adds noise. need more noise?
     //console.log(`noise: ${noise}, with shape: ${noise.shape}`);
     //actions.add(noise);
     actions = tf.add(actions, noise);
@@ -250,7 +264,7 @@ return returnValue;
     const targets1 = this.actor_target.model.getWeights().map(tf.clone);
     //console.log(`target weights1: ${targets1}`);
     const mainWeights1 = this.actor_main.model.getWeights().map(tf.clone);
-    
+    //weights1.append ( weight * tau + targets1[i]*(1-tau))
     //console.log(`mainweights1: ${mainWeights1}`);
     for (let i = 0; i < mainWeights1.length; i++) {
       const updatedWeight1 = tf.tidy(() => {
@@ -309,16 +323,16 @@ return returnValue;
     tf.tidy(() => {
     // STEP 4: we sample a batch of transitions (s, s`, a, r) from memory
     const [states, nextStates, rewards, actions, dones] = this.memory.sample(this.batch_size);
-
+      
     //console.log(`states:${states}, nextStates:${nextStates}, rewards:${rewards}, actions:${actions}, dones:${dones}`); // BIG ARRAY WARNING
     // video has all these using critic_1, says doesnt matter. dtype matters
     const statesTensor = tf.tensor(states).squeeze();
     const nextStatesTensor = tf.tensor(nextStates).squeeze();
-    const rewardsTensor = tf.tensor(rewards); // no squeze?
-    const actionsTensor = tf.tensor(actions).squeeze(); //actions needs [] here for some reason
-    const donesTensor = tf.tensor(dones)
-    //console.log(`statesTensor:${statesTensor}, nextStatesTensor:${nextStatesTensor}, rewardsTensor${rewardsTensor}, actionsTensor:${actionsTensor}`);
-    //console.log(`statesTensor:${statesTensor.shape}, nextStatesTensor:${nextStatesTensor.shape}, rewardsTensor${rewardsTensor.shape}, actionsTensor:${actionsTensor.shape}`);
+    const rewardsTensor = tf.tensor(rewards); //[]
+    const actionsTensor = tf.tensor(actions).squeeze(); 
+    const donesTensor = tf.tensor(dones) // []
+    //console.log(`states:${statesTensor}, nextStates:${nextStatesTensor}, rewards${rewardsTensor}, actions:${actionsTensor}, dones:${donesTensor}`);
+    //console.log(`statesTensor:${statesTensor.shape}, nextStatesTensor:${nextStatesTensor.shape}, rewardsTensor${rewardsTensor.shape}, actionsTensor:${actionsTensor.shape}, donesTensor:${donesTensor.shape}`);
     //console.log(`nextStatesTensor: ${nextStatesTensor}, shape: ${nextStatesTensor.shape}`);
     //console.log(`donesTensor: ${donesTensor}`);
     //console.log(`rewardsTensor: ${rewardsTensor}`);
@@ -339,29 +353,32 @@ return returnValue;
     function lossFunction1() { 
       const targetActions1 = agent.actor_target.call(nextStatesTensor); 
       const rewards1 = tf.clone(rewardsTensor);
+      
       //console.log(`targetActions actions: ${targetActions1}`);
+      //console.log(`rewards1: ${rewards1}`);
+      //console.log(`dones: ${donesTensor}`);
       // STEP 6: We add Gaussian noise to the next action a` and we clamp it in a range of values supported by environment
       const ranNormalActions1 = tf.clone(tf.add(targetActions1, tf.clipByValue(tf.randomNormal(targetActions1.shape, 0.0, 0.2), -0.5, 0.5)));//.map(tf.clone); // video 2 uses actionsTensor?
-      //console.log(`randomNormal actions: ${ranNormalActions1}`);
+      //console.log(`randomNormal actions: ${ranNormalActions1}, ${ranNormalActions1.shape}`);
       const clipActions1 = tf.clone(tf.mul(tf.scalar(agent.max_action), tf.clipByValue(ranNormalActions1, agent.min_action, agent.max_action)));//.map(tf.clone); 
-      //console.log(`cliped actions: ${clipActions1}`);
+      //console.log(`cliped actions: ${clipActions1}, ${clipActions1.shape}`);
       // STEP 7: The two Critic targets take each the couple (s`, a`) as input and return two Q-values as outputs
       const targetNextStateValues1_1 = agent.critic_target.call(nextStatesTensor, clipActions1).squeeze([1]);
       const targetNextStateValues1_2 = agent.critic_target2.call(nextStatesTensor, clipActions1).squeeze([1]);
       // Shape is [batch_size, 1], want to collaps to [batch_size]. (squeeze)
       // STEP 8: we keep the minimum of the two Q-values. min(Qt1, Qt2)
       const nextTargetStateValue1 = tf.minimum(targetNextStateValues1_1, targetNextStateValues1_2);
-      //console.log(`NTSV: ${nextTargetStateValue1}`);
+      //console.log(`NTSV: ${nextTargetStateValue1}, ${nextTargetStateValue1.shape}`);
       // STEP 9: we get the final target of the two Critic models (Qt = r + gamma * min(Qt1, Qt2) * dones, where gamma is the discount factor)
       //const targetValues1 = rewards1.add(nextTargetStateValue1.mul(tf.scalar(agent.gamma).mul(donesTensor))); //Phil does 1-dones,mines at save
       const targetValues1 = tf.add(rewards1, tf.mul(tf.scalar(agent.gamma), tf.mul(nextTargetStateValue1, donesTensor)));
       // Phil says "that will set the value of the second term, gamma*critic value to 0 everyhwere the done flag is true"
-      //console.log(`targetValues: ${targetValues1}`);
+      //console.log(`targetValues: ${targetValues1}, ${targetValues1.shape}`);
       // says we have to squeeze because we have batch dimentino, and doesn't learn if you past that through.
       const criticValue1 = agent.critic_main.call(statesTensor, actionsTensor).squeeze([1]); // squeese? says wont learn otherwise
-      //console.log(`criticValue: ${criticValue1}`);
-      const criticLoss1 = tf.losses.meanSquaredError(targetValues1, criticValue1);
-      //console.log(`crit Loss1: ${criticLoss1}`); // seems to be working well here, assuming target values are accurate (they werent)
+      //console.log(`criticValue: ${criticValue1}, ${criticValue1.shape}`);
+      const criticLoss1 = tf.losses.meanSquaredError(criticValue1, targetValues1);
+      //console.log(`crit Loss1: ${criticLoss1}, ${criticLoss1.shape}`);
      
       return criticLoss1;
     };
@@ -379,7 +396,7 @@ return returnValue;
       const targetValues2 = tf.add(rewards2, tf.mul(tf.scalar(agent.gamma), tf.mul(nextTargetStateValue2, donesTensor)));
 
     const criticValue2 = agent.critic_main2.call(statesTensor, actionsTensor).squeeze([1]) // squeese? says wont learn otherwise?
-    const criticLoss2 = tf.losses.meanSquaredError(targetValues2, criticValue2);
+    const criticLoss2 = tf.losses.meanSquaredError(criticValue2, targetValues2);
   
     return criticLoss2
     //return criticMean2;
@@ -390,12 +407,18 @@ return returnValue;
     const gWeights1 = this.critic_main.model.getWeights(true)//.map(tf.clone); // this does give all the weights right?
     //console.log(`gWeights1: ${gWeights1}`);
     //this.c_opt1.computeGradients(lossFunction1,gWeights1);
-    let computedgrads1 = this.c_opt1.computeGradients(lossFunction1,gWeights1);  // do we need to .step() optimizers?
-    this.c_opt1.applyGradients(computedgrads1.grads);
+    //let computedgrads1 = this.c_opt1.computeGradients(lossFunction1,gWeights1);  // do we need to .step() optimizers?
+    //const computedgrads1 = tf.variableGrads(lossFunction1,gWeights1);
+    //this.c_opt1.applyGradients(computedgrads1.grads);
+    //this.critic_main.model.optimizer.applyGradients(computedgrads1.grads);
+    this.critic_main.model.optimizer.minimize(lossFunction1,gWeights1);
 
     const gWeights2 = this.critic_main2.model.getWeights(true)//.map(tf.clone);
-    let computedgrads2 = this.c_opt2.computeGradients(lossFunction2,gWeights2);
-    this.c_opt2.applyGradients(computedgrads2.grads);
+    //let computedgrads2 = this.c_opt2.computeGradients(lossFunction2,gWeights2);
+   // const computedgrads2 = tf.variableGrads(lossFunction2,gWeights2);
+    this.critic_main2.model.optimizer.minimize(lossFunction2,gWeights2);
+    //this.c_opt2.applyGradients(computedgrads2.grads);
+    //this.critic_main2.model.optimizer.applyGradients(computedgrads2.grads);
     
     this.trainstep += 1;
 
@@ -405,7 +428,12 @@ return returnValue;
       
       function lossFunction3() {
         // gradient ascent is the negative of gradient decent.
-        const actorLoss = tf.mean(agent.critic_main.call(statesTensor, agent.actor_main.call(statesTensor)).neg());
+        //console.log(`statesTensor: ${statesTensor}, ${statesTensor.shape}`);
+        const actorCall = agent.actor_main.call(statesTensor);
+        //console.log(`actorCall: ${actorCall}, ${actorCall.shape}`);
+        const criticCall = agent.critic_main.call(statesTensor, actorCall).neg();
+        //console.log(`criticCall: ${criticCall}, ${criticCall.shape}`);
+        const actorLoss = tf.mean(criticCall);
         //console.log(`actor loss: ${actorLoss}`);
         return actorLoss;
            // const new_policy_actions = self.actor_main(states)
@@ -414,14 +442,18 @@ return returnValue;
       }
       
       const gWeights3 = this.actor_main.model.getWeights(true)//.map(tf.clone);
-      let computedgrads3 = this.a_opt.computeGradients(lossFunction3,gWeights3);
+      //let computedgrads3 = this.a_opt.computeGradients(lossFunction3,gWeights3);
+      //const computedgrads3 = tf.variableGrads(lossFunction3,gWeights3);
+      this.actor_main.model.optimizer.minimize(lossFunction3,gWeights3);
       //console.log(computedgrads3.grads);
-      this.a_opt.applyGradients(computedgrads3.grads);
-     
+      //this.a_opt.applyGradients(computedgrads3.grads);
+      //this.actor_main.model.optimizer.applyGradients(computedgrads3.grads);
+
        // STEP 14/15... updating weights every two iterations. moved here because the original paper says to.
-      this.updateTarget(); // same as self.update_netowrk_parameters() in video
+      //this.updateTarget(); // same as self.update_netowrk_parameters() in video
       
     }
+    this.updateTarget();
   }); // End Tidy
 
   
@@ -435,7 +467,7 @@ return returnValue;
 
   }
 } // End Agent Class
-
+/*
 function envReset() {
   // Initialize or reset the game environment and entities
 
@@ -443,54 +475,126 @@ function envReset() {
   //observationSpace.resetTarget();
   observationSpace.stateSpace = JSON.parse(JSON.stringify(observationSpace.defaults));
   observationSpace.next_stateSpace = JSON.parse(JSON.stringify(observationSpace.defaults));
- 
-  return observationSpace.stateSpace
+  const os = observationSpace.stateSpace;
+  const inputMax = os.max();
+  const inputMin = os.min();
+
+  const normalizedData = os.sub(inputMin).div(inputMax.sub(inputMin));
+  
+  return normalizedData
   
 }
+*/
+
+function normalizeData(data) {
+  const inputMax = data.map(feature => Math.max(...feature));
+  const inputMin = data.map(feature => Math.min(...feature));
+
+  const normData = data.map((feature, index) =>
+    feature.map(value => (value - inputMin[index]) / (inputMax[index] - inputMin[index]))
+  );
+  return normData
+}
+
+function normalizeReward(reward, minRange = -50, maxRange = 50) {
+  
+  const scaledValue = (x - minRange) / (maxRange - minRange) * 2 - 1;
+  return Math.max(-1, Math.min(1, scaledValue));
+
+}
+
+function envReset() {
+  // Initialize or reset the game environment and entities
+
+  // Reset the state space
+  observationSpace.stateSpace = JSON.parse(JSON.stringify(observationSpace.defaults));
+  observationSpace.next_stateSpace = JSON.parse(JSON.stringify(observationSpace.defaults));
+  
+  const state = observationSpace.stateSpace;
+  
+  return state;
+}
+
+
 
 function envStep(action, n_steps) {
   const actionClone = JSON.parse(JSON.stringify(action));
-  const playerSpeed = 5;  // temp hardcode 
+  const playerSpeed = 10;  // temp hardcode 
   const os = observationSpace.next_stateSpace;
+  let hitWall = false;
   //console.log(`os1: ${observationSpace.next_stateSpace}`);
   //console.log(os);
   //console.log(action);
    // Calculate new positions of entities, resolve collisions, etc.
+   const x = (playerSpeed * actionClone[0]); //ex. (5 * 1 = 5, 5 * 0.5 = 2.5)
+   const y = (playerSpeed * actionClone[1]); //.toFixed(5)
+   //console.log(`x: ${x}, y: ${y}`);
+   //console.log(`osX: ${os[0][0]}, osY: ${os[0][1]}`);
   // move X
-  if (actionClone[0] < -0.5) {os[0][0] -= playerSpeed}
-  else if (actionClone[0] > 0.5) {os[0][0] += playerSpeed}
+  if (actionClone[0] < -0.001) {
+    if ((os[0][0] - Math.abs(actionClone[0])) < 0.001) {os[0][0] = 0.001; hitWall = true;}
+    else {os[0][0] += x;}
+  }
+  else if (actionClone[0] > 0.001) {
+    if ((os[0][0] + Math.abs(actionClone[0])) > (Game.width - 20)) {os[0][0] = (Game.width - 20); hitWall = true;}
+    else {os[0][0] += x;}
+    
+  }
   // move Y
-  if (actionClone[1] < -0.5) {os[0][1] -= playerSpeed}
-  else if (actionClone[1] > 0.5) {os[0][1] += playerSpeed}
+  if (actionClone[1] < -0.001) {
+    if ((os[0][1] - Math.abs(actionClone[1])) < 0.001) {os[0][1] = 0.001;  hitWall = true;}
+    else {os[0][1] += y;}
+  }
+  else if (actionClone[1] > 0.001) {
+    if ((os[0][1] + Math.abs(actionClone[1])) > (Game.height - 20)) {os[0][1] = (Game.height - 20); hitWall = true;}
+    else {os[0][1] += y;}
+    
+  }
+  const mx = os[0][0];
+  const my = os[0][1];
+  //console.log(`mx: ${mx}, my: ${my}`);
+  Game.agentMoves.push([mx, my])
+  //animateAgent();
+
   //console.log(`os2: ${observationSpace.next_stateSpace}`);
   //const reward = calculateReward();
   let isDone = false;
   let reward = 0;
   
   //let zomDist = utilsAI.distance(os[0][0],os[0][1],os[0][2],os[0][3]);
-  let civDist = utilsAI.distance(os[0][0],os[0][1],os[0][4],os[0][5]); 
-  //console.log(os[0]);
-  //console.log(`civ Dist: ${civDist}`);
+ // let civDist = utilsAI.distance(os[0][0],os[0][1],os[0][2],os[0][3]); 
+  let civDist = utilsAI.distance(os[0][0],os[0][1],observationSpace.civLoc[0],observationSpace.civLoc[1]);
+  let civAngle = utilsAI.angle([os[0][0],os[0][1]],[observationSpace.civLoc[0],observationSpace.civLoc[1]]);
+  os[0][3] = civAngle;
 
-  if (civDist > os[0][6]) {reward -= 5}
-  else if (civDist < os[0][6]) {reward += 5;}
-  os[0][6] = JSON.parse(JSON.stringify(civDist));
+  //console.log(`civAngle: ${civAngle}`);
+  //civLoc:[400,150],
+  //console.log(os[0]);
+  
+
+  if (civDist > os[0][2]) {reward -= 1}
+  else if (civDist < os[0][2]) {reward += 1;}
+  os[0][2] = JSON.parse(JSON.stringify(civDist));
   //os[0][6] = observationSpace.targetDist
   //console.log(os[0][6]);
  
   let collider = collideCheck(actionClone,true);
   if (collider) {
     switch(collider){
-      case "civilian": reward += 100; isDone = true;
+      case "civilian": reward += 5; isDone = true;
       break;
-      case "zombie": reward -= 50; isDone = true;
+      case "zombie": reward -= 2; isDone = true;
       break;    
     }
   }
-
-  //let reward = agent.trainstep;
-  const next_State = JSON.parse(JSON.stringify(observationSpace.next_stateSpace));
-
+  if (hitWall) {reward -= 1}
+ // if (!isDone) {reward -0.1} // help prevent stalling for rewards?
+  console.log(`step: ${n_steps}, civ Dist: ${civDist}`);
+  console.log(`reward: ${reward}`);
+  
+  const base_Next_State = JSON.parse(JSON.stringify(observationSpace.next_stateSpace));
+  const next_State = normalizeData(base_Next_State);
+  //console.log(next_State);
   // Return the next state, reward, and whether the game is done
   //const nextState = getGameState(); // Implement this to return the game state
   if (n_steps >= agent.batch_size) {isDone = true}
@@ -499,8 +603,8 @@ function envStep(action, n_steps) {
 
 // Math.seedrandom() ?
 
-const agent = new Agent(actionSpace.numberActions,observationSpace.stateSpace[0].length); 
-const episodes = 5; ///100 - 2000 // check batches size
+const agent = new Agent(actionSpace.numberActions, observationSpace.stateSpace[0].length, observationSpace.stateSpace[0].length + actionSpace.numberActions); 
+const episodes = 30; ///100 - 2000 // check batches size
 const epReward = [];
 const totalAvgReward = [];
 let target = false;
@@ -521,22 +625,30 @@ function main() {  // Removed async   //
     while (!done) {
       if (!Game.running) {break}
       //console.log(n_steps);
-      //console.log(`State ${n_steps}: ${state}`);
+      //console.log(state);
+      //console.log(`State ${n_steps}: ${state}, shape: ${}`);
+      const normalState = normalizeData(state);
+      //console.log(`normState ${n_steps}: ${normalState}`);
+      //console.log(normalState);
       // STEP 1a: get an action based on the current state 
-      const action = agent.act(state); // choose_action(observation), is envReset(). // video 2 adds more noise to the action
+      const action = agent.act(normalState); // choose_action(observation), is envReset(). // video 2 adds more noise to the action
       //console.log(state[0][6]);
-      console.log(action); // not a tensor, just array. [0,0] but why? for envStep?
+      //console.log(action); // not a tensor, just array. [0,0] but why? for envStep?
       //console.log(`first state: ${state}`);
       // STEP 2a: step the environment with the action, returning the new state, rewards, and if done
       const { next_state, reward, isDone } = envStep(action, n_steps);
+      //console.log(`reward: ${reward}`)
       // remember to consider what happens with no training
       // STEP 3: save the new state to the memory buffer
       //console.log(`state after env: ${state}`);
       //console.log(`next_state after env: ${next_state}`);
       //console.log(`action after env: ${action}`);
       //console.log(`saving isDone as: ${isDone}`);
-      
-      agent.savexp(state, next_state, action, isDone, reward); 
+      //console.log(reward);
+      const normal_Next_State = normalizeData(next_state);
+      //const normalReward = normalizeData([reward]);
+
+      agent.savexp(normalState, normal_Next_State, action, isDone, reward); 
       
       // Step 4-15..: train the system
       agent.train(); // Removed Await // only gets called if memory.cnt = agent.batch size
@@ -566,4 +678,5 @@ function main() {  // Removed async   //
       }
     }
   }
+  animateAgent();
 }
