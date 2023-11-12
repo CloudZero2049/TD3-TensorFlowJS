@@ -1,14 +1,10 @@
 [CURENT WORK]
 
-1) Trying to find out why agent isn't learning.
+1) The agent appears to be learning to some degree. A recent run has the agent going back and forth from negative to possitive movement, resulting in a total reward of 1 for the whole step (effectively eliminating bad rewards with good ones). Why doesn't the agent just pick good reward choices? Maybe I need to give him more movement angles.
 
-2) The actor actions are changing but only by very small amounts (to five decimal places, 0.99995). Then quickly converges on -1 or 1, something like [-1,1]. I looks like the agent ends up choosing the same action every time even though it's being negativly rewarded for it.
+2) right now, The slower the agent moves towards the civilian the higher his reward (unless he touches the civilian for a bonus)
 
-3) running 300 episodes (100 batch size, ~200 warm-up) had no effect.
-
-3) I'm curiouse if the action clipping is hiding details on this.
-
-3) next: trace the choices the agent is making. 
+3) agent is getting rewarded for moving in the general direction of civilian (as long as hes closer than last step). I think I will add the angle as an insentive.
 
 [CHANGE LOG]
 
@@ -48,3 +44,37 @@
 1) discovered that the line actions.add(noise) wasn't doing the math, so I re-wrote everything like the following because I know it works: actions = tf.add(actions, noise);
 
 2) agent now must break -0.5 to 0.5 threashhold to move (may be temporary we'll see).
+
+[11/10/23]
+1) changed the gradient math to use tf.variableGrads.
+
+2) implemented the use of .minimize() for gradient application to models.
+
+3) finaly realized I wasn't normalizing input data. Am now normalizing input data.
+
+[11/11/23]
+1) added a "boundry" to agent movement. If it tries to move below 0.001 on x or y axis (top and left sides of map) it is set to 0.001. This should help with normalization since we wont have to deal with negative x,y values.
+
+2) agent must now break a -0.001 to 0.001 threshold in order to move. (affects movement range).
+
+3) agent now moves based on the data stored in action, allowing more range of movement and more direct control.
+
+4) Fixed tf.losses.meanSquaredError(labels, predictions) (they were backwards)
+
+5) removed the zombie x,y coordinates for now because they are static numbers.
+
+6) agent now gets negative points for bumping into boundry walls.
+
+7) now able to set "player/agent" and civillian starting locations and agent goes in the right general direction.
+
+8) added a visual to show the path that the agent chose to take on the canvas. Colors denote batch.
+
+9) removed the civilian x,y coordinates for now because they are static numbers and may have been hampering training.
+
+10) fixed agent x,y only increasing because I needed to use += (not -=) when subtracting.
+
+11) removed ability to start TD3 again after a run (doesn't appear to be working properly)
+
+12) added angle of agent to civillian into observation space (not directly tied to rewards at the moment).
+
+13) tied starting x,y coords to their object counterparts (found in game.js at bottom)
