@@ -15,24 +15,29 @@ const utilsAI = {
       let dx = tX - fX;
       let dy = tY - fY;
     
-      let angle = Math.atan2(dx, dy);
+      let angle = Math.atan2(dy, dx);
       return angle;
+     // let normalizedAngle = (angle + Math.PI) / (2 * Math.PI); // Normalize to [0, 1]
+    //normalizedAngle = normalizedAngle * 2 - 1; 
     
   }
 }
 
 //observationSpace.stateSpace.length
 const observationSpace ={ 
-  //resetTarget: function() {observationSpace.targetDist =  utilsAI.distance(observationSpace.defaults[0][0],observationSpace.defaults[0][1],observationSpace.defaults[0][4],observationSpace.defaults[0][5]);},
-  //targetDist: 28, // adjusts from function
   //[agentX,agentY,zombieX,zombieY,civilianX,civilianY,dist to civ, angle to civ]
-  civLoc:[civ1.x, civ1.y],
-  defaults: [[player.x, player.y, 28, 1.56]],  // IF THESE (x,y) CHANGE, CHANGE IN CANVAS ALSO!
-  stateSpace: [[player.x, player.y, 28, 1.56]],
-  next_stateSpace: [[player.x, player.y, 28, 1.56]],
+  initUpdate: function() { // [0,0],[0,0]
+    observationSpace.defaults[0][0] = player.x + (player.width/2);
+    observationSpace.defaults[0][1] = player.y + (player.height/2);
+    observationSpace.civLoc[0] = civ1.x + (civ1.width/2);
+    observationSpace.civLoc[1] = civ1.y + (civ1.height/2);
+  },
+  civLoc:[civ1.x + (civ1.width/2), civ1.y + (civ1.height/2)],
+  defaults: [[player.x + (player.width/2), player.y + (player.height/2), 28, 1.56]],  // IF THESE (x,y) CHANGE, CHANGE IN CANVAS ALSO!
+  stateSpace: [[player.x + (player.width/2), player.y + (player.height/2), 28, 1.56]],
+  next_stateSpace: [[player.x + (player.width/2), player.y + (player.height/2), 28, 1.56]],
 }
-//actionSpace.numberActions
-//actionSpace.shape[1]
+
 const actionSpace = {
   numberActions: 2,
   shape: [2], // not used
@@ -167,14 +172,14 @@ class Actor {
 //Phil: batch_size = 300, warmup = 1000, n_games 1000
 //n_actions = 2, cInputShape = 9, alpha = 0.001, beta = 0.002, gamma = 0.99, tau = 0.005, warmup = 50, RBufferSize = 100000
 class Agent {
-  constructor(n_actions = 2, inputShapeA = 4, inputShapeC = 6, alpha = 0.001, beta = 0.002, gamma = 0.99, tau = 0.005, warmup = 200, RBufferSize = 100000) {                           
+  constructor(n_actions = 2, inputShapeA = 4, inputShapeC = 6, alpha = 0.001, beta = 0.002, gamma = 0.99, tau = 0.005, warmup = 64, RBufferSize = 100000) {                           
     this.actor_main = new Actor(n_actions,inputShapeA);
     this.actor_target = new Actor(n_actions,inputShapeA);
     this.critic_main = new Critic(inputShapeC);
     this.critic_main2 = new Critic(inputShapeC);
     this.critic_target = new Critic(inputShapeC);
     this.critic_target2 = new Critic(inputShapeC);
-    this.batch_size = 25;
+    this.batch_size = 32;
     this.n_actions = n_actions;
     this.a_opt = tf.train.adam(alpha);
     this.c_opt1 = tf.train.adam(beta);
@@ -186,6 +191,7 @@ class Agent {
     this.actor_update_steps = 2; 
     this.warmup = warmup; // initialy 200
     this.trainstep = 0;
+    this.maxStepCount = 32; // not tied to trainstep
     this.min_action = actionSpace.low[0];   // negative movement
     this.max_action = actionSpace.high[0];  // positive movement
 
@@ -496,7 +502,7 @@ function normalizeData(data) {
   return normData
 }
 
-function normalizeReward(reward, minRange = -50, maxRange = 50) {
+function normalizeReward(reward, minRange = -1, maxRange = 1) {
   
   const scaledValue = (x - minRange) / (maxRange - minRange) * 2 - 1;
   return Math.max(-1, Math.min(1, scaledValue));
@@ -517,9 +523,9 @@ function envReset() {
 
 
 
-function envStep(action, n_steps) {
+function envStep(action, state, n_steps) {
   const actionClone = JSON.parse(JSON.stringify(action));
-  const playerSpeed = 10;  // temp hardcode 
+  const playerSpeed = 5;  // temp hardcode 
   const os = observationSpace.next_stateSpace;
   let hitWall = false;
   //console.log(`os1: ${observationSpace.next_stateSpace}`);
@@ -565,20 +571,79 @@ function envStep(action, n_steps) {
  // let civDist = utilsAI.distance(os[0][0],os[0][1],os[0][2],os[0][3]); 
   let civDist = utilsAI.distance(os[0][0],os[0][1],observationSpace.civLoc[0],observationSpace.civLoc[1]);
   let civAngle = utilsAI.angle([os[0][0],os[0][1]],[observationSpace.civLoc[0],observationSpace.civLoc[1]]);
-  os[0][3] = civAngle;
+  let angleDeg1 = civAngle * (180 / Math.PI);
+  let angleDeg2 = state[0][3] * (180 / Math.PI);
+  let angleDegDif = Math.abs(angleDeg1 - angleDeg2);
+  //let angleRadDiff = angleDegDif * (Math.PI / 180);
 
+  // Assuming angleDegDif is in the range [0, 180]
+let angleReward = 180 - angleDegDif; // Reward increases as angleDegDif approaches 0
+// Scale the angle reward if needed
+let angleRewardScaling = 0.005; // Adjust as needed
+angleReward *= angleRewardScaling;
+
+let distanceReward = 1 / civDist; // Reward increases as the agent gets closer
+// Scale the distance reward if needed
+let distanceRewardScaling = 0.1; // Adjust as needed
+distanceReward *= distanceRewardScaling;
+if (civDist > os[0][2]) {distanceReward -= 0.5}
+else if (civDist < os[0][2]) {distanceReward += 0.5;}
+
+
+let totalReward = distanceReward + angleReward;
+// Update the agent's reward
+reward += totalReward; 
+
+  //reward -= angleDegDif;
+  console.log(`step: ${n_steps}, civ Dist: ${civDist}`);
+  console.log(`distanceReward: ${distanceReward}`);
+  console.log(`civAngle: ${civAngle}`);
+  console.log(`angleDegDif: ${angleDegDif}`);
+  console.log(`angleReward: ${angleReward}`);
+  console.log(`total Reward: ${totalReward}`);
+  //console.log(`angleRadDiff: ${angleRadDiff}`);
+  //if((civAngle - state[0][3]) > 0.2 ) {reward += 0.5}
+  //else {reward += 0.5}
+  os[0][2] = JSON.parse(JSON.stringify(civDist));
+  os[0][3] = civAngle;
+  if (civDist <= player.width) {reward += 5; console.warn("AGENT FOUND CIVILIAN!");isDone = true;}
+  if (hitWall) {reward -= 1}
+ 
+  console.log(`reward: ${reward}`);
+  //1rad × 180/π = 57.296°
+  //1° × π/180 = 0.01745rad
+  // Assuming angle is normalized between -1 and 1
+//let normalizedAngle = civAngle / maxPossibleAngleValue; 
+
+// Ensure that the angle reward is in a reasonable range
+//normalizedAngle = Math.max(Math.min(normalizedAngle, 1), -1);
+
+// Scaling factor for the angle reward
+//let angleScaling = 0.1; // Adjust as needed
+
+// Update the reward
+//reward -= angleScaling * normalizedAngle;
+
+
+
+  //let lMX = (10 * Math.sin(angle));
+  //let lMY = (10 * Math.cos(angle));
+  //let moveX = (speed * Math.sin(angle));
+  //let moveY = (speed * Math.cos(angle));
   //console.log(`civAngle: ${civAngle}`);
   //civLoc:[400,150],
   //console.log(os[0]);
   
 
-  if (civDist > os[0][2]) {reward -= 1}
-  else if (civDist < os[0][2]) {reward += 1;}
-  os[0][2] = JSON.parse(JSON.stringify(civDist));
+  //if (civDist > os[0][2]) {reward -= 0.5}
+ // else if (civDist < os[0][2]) {reward += 0.5;}
+  
   //os[0][6] = observationSpace.targetDist
   //console.log(os[0][6]);
- 
-  let collider = collideCheck(actionClone,true);
+
+  
+  /*
+  //let collider = collideCheck(actionClone,true);
   if (collider) {
     switch(collider){
       case "civilian": reward += 5; isDone = true;
@@ -587,29 +652,29 @@ function envStep(action, n_steps) {
       break;    
     }
   }
-  if (hitWall) {reward -= 1}
- // if (!isDone) {reward -0.1} // help prevent stalling for rewards?
-  console.log(`step: ${n_steps}, civ Dist: ${civDist}`);
-  console.log(`reward: ${reward}`);
+  */
+
+  
   
   const base_Next_State = JSON.parse(JSON.stringify(observationSpace.next_stateSpace));
   const next_State = normalizeData(base_Next_State);
   //console.log(next_State);
   // Return the next state, reward, and whether the game is done
   //const nextState = getGameState(); // Implement this to return the game state
-  if (n_steps >= agent.batch_size) {isDone = true}
+  if (n_steps >= agent.maxStepCount) {isDone = true}
   return { next_state: next_State, reward: reward, isDone: isDone };
 }
 
 // Math.seedrandom() ?
 
 const agent = new Agent(actionSpace.numberActions, observationSpace.stateSpace[0].length, observationSpace.stateSpace[0].length + actionSpace.numberActions); 
-const episodes = 30; ///100 - 2000 // check batches size
+const episodes = 5; ///100 - 2000 // check batches size
 const epReward = [];
 const totalAvgReward = [];
 let target = false;
 
 function main() {  // Removed async   // 
+  observationSpace.initUpdate();
   for (let s = 0; s < episodes; s++) {
     if (!Game.running) {break}
     if (target) {
@@ -620,7 +685,7 @@ function main() {  // Removed async   //
     let state = envReset(); // make sure is right shape!
     let done = false;
     let n_steps = 0;
-    let batchSteps = false;
+    let stepDone = false;
    
     while (!done) {
       if (!Game.running) {break}
@@ -636,7 +701,7 @@ function main() {  // Removed async   //
       //console.log(action); // not a tensor, just array. [0,0] but why? for envStep?
       //console.log(`first state: ${state}`);
       // STEP 2a: step the environment with the action, returning the new state, rewards, and if done
-      const { next_state, reward, isDone } = envStep(action, n_steps);
+      const { next_state, reward, isDone } = envStep(action, state, n_steps);
       //console.log(`reward: ${reward}`)
       // remember to consider what happens with no training
       // STEP 3: save the new state to the memory buffer
@@ -658,11 +723,12 @@ function main() {  // Removed async   //
       
       totalReward += reward;
       //console.log(`Reward: ${totalReward}`);
-      if (n_steps >= agent.batch_size) {batchSteps = true} // forcing batch size episodes
+      
+      if (n_steps >= agent.maxStepCount) {stepDone = true} // forcing batch size episodes
       n_steps++
       
 
-      if (isDone || batchSteps) {
+      if (isDone || stepDone) {
         epReward.push(JSON.parse(JSON.stringify(totalReward)));
         const avgReward = epReward.slice(-100).reduce((a, b) => a + b, 0) / Math.min(epReward.length, 100);
         totalAvgReward.push(avgReward);
