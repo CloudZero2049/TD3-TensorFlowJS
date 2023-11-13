@@ -36,6 +36,41 @@ canvas {position: absolute;
     left: 700px;
     z-index: 3;
 }
+.slidecontainer {
+    position: absolute;
+    top: 200px;
+    left: 700px;
+    z-index: 3;
+     /*width: 100%; Width of the outside container */
+}
+
+/* The slider itself */
+.slider {
+  -webkit-appearance: none;  /* Override default CSS styles */
+  appearance: none;
+  width: 200px; /* Full-width */
+  height: 10px; /* Specified height */
+  background: #d3d3d3; /* Grey background */
+  outline: none; /* Remove outline */
+  
+}
+
+/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none; /* Override default look */
+  appearance: none;
+  width: 15px; /* Set a specific slider handle width */
+  height: 10px; /* Slider handle height */
+  background: #04AA6D; /* Green background */
+  cursor: pointer; /* Cursor on hover */
+}
+
+.slider::-moz-range-thumb {
+  width: 15px; /* Set a specific slider handle width */
+  height: 10px; /* Slider handle height */
+  background: #04AA6D; /* Green background */
+  cursor: pointer; /* Cursor on hover */
+}
 
 </style>
 
@@ -62,14 +97,65 @@ canvas {position: absolute;
     <!-- <button id="classButton" onclick="classify()" disabled="true">Classify</button> -->
     <!--  <button id="saveModelButton" onclick="saveModel()" disabled="true">Save Model</button> -->
 </div>
+<div class="slidecontainer">
+    <input type="range" min="10" max="570" value="150" class="slider" id="agentRangeX">
+    <p id="aRangeInfoX">Agent Start X: 150</p>
+    <input type="range" min="10" max="470" value="150" class="slider" orient="vertical" id="agentRangeY">
+    <p id="aRangeInfoY">Agent Start Y: 150</p>
+    <input type="range" min="10" max="570" value="400" class="slider" id="civRangeX">
+    <p id="cRangeInfoX">Civilian Start Y: 400</p>
+    <input type="range" min="10" max="470" value="200" class="slider" orient="vertical" id="civRangeY">
+    <p id="cRangeInfoY">Civilian Start Y: 200</p>
+  </div>
+  
 <script src="utils.js"> </script>
 <script src="Classes.js"> </script>
 <script src="game.js"></script>
 <script src="TD3script.js"></script>
 <script src="collisions.js"> </script>
-
 <script src="keyboardControl.js"> </script>
+<script>
+    let aSliderX = document.getElementById("agentRangeX");
+    let aOutputX = document.getElementById("aRangeInfoX");
+    aOutputX.innerHTML = `Agent Start X: ${aSliderX.value}`; // Display the default slider value
 
+    let aSliderY = document.getElementById("agentRangeY");
+    let aOutputY = document.getElementById("aRangeInfoY");
+    aOutputY.innerHTML = `Agent Start Y: ${aSliderY.value}`;
+
+    let cSliderX = document.getElementById("civRangeX");
+    let cOutputX = document.getElementById("cRangeInfoX");
+    cOutputX.innerHTML = `Civilian Start X: ${cSliderX.value}`;
+
+    let cSliderY = document.getElementById("civRangeY");
+    let cOutputY = document.getElementById("cRangeInfoY");
+    cOutputY.innerHTML = `Civilian Start Y: ${cSliderY.value}`;
+
+    // Update the current slider value (each time you drag the slider handle)
+    aSliderX.oninput = function() {
+        aOutputX.innerHTML = `Agent Start X: ${this.value}`;
+        
+        player.x = parseInt(this.value);
+        Game.redrawInit();
+    }
+    aSliderY.oninput = function() {
+        aOutputY.innerHTML = `Agent Start Y: ${this.value}`;
+        player.y = parseInt(this.value);
+        Game.redrawInit();
+    }
+    cSliderX.oninput = function() {
+        cOutputX.innerHTML = `Civilian Start X: ${this.value}`;
+        civ1.x = parseInt(this.value);
+        Game.redrawInit();
+    }
+    cSliderY.oninput = function() {
+        cOutputY.innerHTML = `Civilian Start Y: ${this.value}`;
+        civ1.y = parseInt(this.value);
+        Game.redrawInit();
+    }
+
+
+</script>
 </body>
 
 </html>
