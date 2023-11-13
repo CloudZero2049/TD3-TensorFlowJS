@@ -1,10 +1,8 @@
 [CURENT WORK]
 
-1) The agent appears to be learning to some degree. A recent run has the agent going back and forth from negative to possitive movement, resulting in a total reward of 1 for the whole step (effectively eliminating bad rewards with good ones). Why doesn't the agent just pick good reward choices? Maybe I need to give him more movement angles.
+1) The agent appears to be learning. I'm fine tuning the reward system and I'm going to try seperating agent actions into 4 areas. 2 for x,y movement (up or down, left or right), and 2 for x,y speed (how far it moves on each axis. This gives a broader range of movement)
 
 2) right now, The slower the agent moves towards the civilian the higher his reward (unless he touches the civilian for a bonus)
-
-3) agent is getting rewarded for moving in the general direction of civilian (as long as hes closer than last step). I think I will add the angle as an insentive.
 
 [CHANGE LOG]
 
@@ -57,7 +55,7 @@
 
 2) agent must now break a -0.001 to 0.001 threshold in order to move. (affects movement range).
 
-3) agent now moves based on the data stored in action, allowing more range of movement and more direct control.
+3) agent now moves based on the data stored in action, allowing more range of movement and more direct control. (toFixed(5) decimal places)
 
 4) Fixed tf.losses.meanSquaredError(labels, predictions) (they were backwards)
 
@@ -65,11 +63,11 @@
 
 6) agent now gets negative points for bumping into boundry walls.
 
-7) now able to set "player/agent" and civillian starting locations and agent goes in the right general direction.
+7) now able to move player and civillian and player goes in the right general direction.
 
-8) added a visual to show the path that the agent chose to take on the canvas. Colors denote batch.
+8) added a visual to show the path that the agent chose to take on the canvas.
 
-9) removed the civilian x,y coordinates for now because they are static numbers and may have been hampering training.
+9) removed the civilian x,y coordinates for now because they are static numbers.
 
 10) fixed agent x,y only increasing because I needed to use += (not -=) when subtracting.
 
@@ -77,4 +75,18 @@
 
 12) added angle of agent to civillian into observation space (not directly tied to rewards at the moment).
 
-13) tied starting x,y coords to their object counterparts (found in game.js at bottom)
+13) tied starting x,y coords to their object counterparts (found in game.js)
+
+14) Implemented a new reward system combining agent distance from civilian and angle, being rewarded more for a better angle and lower distance.
+
+[11/12/23]
+
+1) all coordinates are now based on centers of the "characters" instead of their top/left x,y postions.
+
+2) change collision detection (at least for now) to rely on the distance of player to civilian (simplifying the process). Zombie will not have collision for now.
+
+3) added a seperate "maxStepCount" so that step length isn't determined by batch size.
+
+4) added html sliders to set agent and civilian positions (script on index.html).
+
+5) changes to reward system (currently working on this)
