@@ -22,7 +22,7 @@ let Game = {
     width: 600,
     height: 500,
     entities: [],
-    player: {},
+    //player: {},
     entityCounter: 0,
     rewards: 0,
     punishments: 0,
@@ -50,12 +50,26 @@ let Game = {
         }
         if (this.running) {return}
         this.running = true;       
+        
         startPlayerButton.disabled = true;
         startTD3Button.disabled = true;
+        const aSliderX = document.getElementById("agentRangeX");
+        const aSliderY = document.getElementById("agentRangeY");
+        const cSliderX = document.getElementById("civRangeX");
+        const cSliderY = document.getElementById("civRangeY");
+        aSliderX.disabled = true;
+        aSliderY.disabled = true;
+        cSliderX.disabled = true;
+        cSliderY.disabled = true;
+        aSliderX.hidden = true;
+        aSliderY.hidden = true;
+        cSliderX.hidden = true;
+        cSliderY.hidden = true;
         
         if (this.user == "TD3") {
             player.user = "TD3";
-            main()
+            //observationSpace.initUpdate([aSliderX.value,aSliderY.value],[cSliderX.value,cSliderY.value]);
+            main();
         }
         else if(this.user == "player") {
             player.user = "human";
@@ -63,7 +77,7 @@ let Game = {
         }
         console.info(tf.memory());
         console.info("TD3 Complete");
-        startTD3Button.disabled = false;
+        //startTD3Button.disabled = false;
     },
     stop: function() {
         if (!this.running) {return}
@@ -88,6 +102,15 @@ let Game = {
         rewardTextArea.innerHTML = `Rewards: ${this.rewards}`;
         punishTextArea.innerHTML = `Punishments: ${this.punishments}`;
     },
+    redrawInit: function() {
+        let ents = Game.entities;
+        ctx.clearRect(0,0,Game.width,Game.height);
+        for (let i = ents.length -1; i >= 0; i--) {
+            if (!ents[i]) {continue}
+            ents[i].draw();
+        }
+    },
+    
     loadPlayer: function() {
        // Game.entities.push(player = new Player(++Game.entityCounter,150,150,"human"));
     },
@@ -137,31 +160,49 @@ function animateAgent() {
     let c1 = 0;
     let c2 = 0;
    for (let i = 0; i < Game.agentMoves.length; i++) {
-    let moveX = Game.agentMoves[i][0];
-    let moveY = Game.agentMoves[i][1];
+    let moveX = (Game.agentMoves[i][0]) + (player.width / 2);
+    let moveY = (Game.agentMoves[i][1]) + (player.height / 2);
     //console.log(`moveX: ${moveX}, moveY: ${moveY }`);
     //let r = Math.floor(Math.random() * (255 + 1))
     //let g = Math.floor(Math.random() * (255 + 1))
     //let b = Math.floor(Math.random() * (255 + 1))
-    let r,g,b;
+    let r,g,b,a;
     
     switch(c1){
-        case 0: r = 255; g = 0; b = 0
+        case 0: r = 255; g = 0; b = 0 // red
         break;
-        case 1: r = 0; g = 255; b = 0
+        case 1: r = 0; g = 255; b = 0 // green
         break;    
-        case 2: r = 0; g = 0; b = 255
+        case 2: r = 0; g = 0; b = 255 // blue
+        break;  
+        case 3: r = 255; g = 128; b = 0 // orange
+        break; 
+        case 4: r = 255; g = 0; b = 255 // pink
+        break; 
+        case 5: r = 0; g = 255; b = 255 // cyan
         break; 
       }
-
-    let rgb = `rgb(${r},${g},${b})`;
+      a = 0.5;
+      let aCutoff = (Game.agentMoves.length / 2) // 01234 56789
+      if (i > aCutoff) {
+        let cutFifth = aCutoff / 5;
+        let b = 0;
+        for (let j = 1; j < 5; j++) {
+            b = i > (aCutoff + (cutFifth * j)) ? (0.1 * j) : 0;
+        }
+        a += b;
+      }
+      
+      
+      
+    let rgba = `rgba(${r},${g},${b},${a})`;
     c2++
-    if (c2 > agent.batch_size) {c1++; c2 = 0;}
-    if (c1 > 2) {c1 = 0}
+    if (c2 > agent.maxStepCount) {c1++; c2 = 0;}
+    if (c1 > 5) {c1 = 0}
 
     ctxBG.beginPath();
     ctxBG.arc(moveX, moveY, 2, 0, 2 * Math.PI);
-    ctxBG.fillStyle = rgb;
+    ctxBG.fillStyle = rgba;
     ctxBG.fill();
 
    }
@@ -177,8 +218,8 @@ function animateAgent() {
 // civ1: 400, 150
 
 function loadEnts() {
-Game.entities.push(player = new Player(++Game.entityCounter, 300, 50, "TD3"));
-Game.entities.push(civ1 = new Civilian(++Game.entityCounter, 200, 200));
+Game.entities.push(player = new Player(++Game.entityCounter, 150, 150, "TD3")); // init values
+Game.entities.push(civ1 = new Civilian(++Game.entityCounter, 400, 200));
 Game.entities.push(new Zombie(++Game.entityCounter,10,10));
 //zombies.push(new Zombie(++game.entityCounter,300,300,"medium"));
 }
