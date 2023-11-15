@@ -16,34 +16,49 @@ const utilsAI = {
       let dy = tY - fY;
     
       let angle = Math.atan2(dy, dx);
+      //let normalizedAngle = (angle + Math.PI) / (2 * Math.PI); // Normalize to [0, 1]
+      //normalizedAngle = normalizedAngle * 2 - 1; // normalise to [-1, 1]
       return angle;
-     // let normalizedAngle = (angle + Math.PI) / (2 * Math.PI); // Normalize to [0, 1]
-    //normalizedAngle = normalizedAngle * 2 - 1; 
+     
     
   }
 }
 
 //observationSpace.stateSpace.length
 const observationSpace ={ 
-  //[agentX,agentY,zombieX,zombieY,civilianX,civilianY,dist to civ, angle to civ]
+  //[agentX,agentY,agentSpeedX ,agentSpeedY,civilianX,civilianY,dist to civ, angle to civ] 8 total
   initUpdate: function() { // [0,0],[0,0]
-    observationSpace.defaults[0][0] = player.x + (player.width/2);
-    observationSpace.defaults[0][1] = player.y + (player.height/2);
-    observationSpace.civLoc[0] = civ1.x + (civ1.width/2);
-    observationSpace.civLoc[1] = civ1.y + (civ1.height/2);
-  },
-  civLoc:[civ1.x + (civ1.width/2), civ1.y + (civ1.height/2)],
-  defaults: [[player.x + (player.width/2), player.y + (player.height/2), 28, 1.56]],  // IF THESE (x,y) CHANGE, CHANGE IN CANVAS ALSO!
-  stateSpace: [[player.x + (player.width/2), player.y + (player.height/2), 28, 1.56]],
-  next_stateSpace: [[player.x + (player.width/2), player.y + (player.height/2), 28, 1.56]],
-}
+    let defs = this.defaults;
+    const aSliderX = document.getElementById("agentRangeX");
+    const aSliderY = document.getElementById("agentRangeY");
+    const cSliderX = document.getElementById("civRangeX");
+    const cSliderY = document.getElementById("civRangeY");
+    //let ss = this.stateSpace;
+    //let nss = this.next_stateSpace;
+    //this.civLoc[0] = civ1.x + (civ1.width/2);
+    //this.civLoc[1] = civ1.y + (civ1.height/2);
+    defs[0][0] = parseInt(aSliderX.value) + (player.width/2);
+    defs[0][1] = parseInt(aSliderY.value) + (player.height/2);
+    defs[0][4] = parseInt(cSliderX.value) + (civ1.width/2);
+    defs[0][5] = parseInt(cSliderY.value) + (civ1.height/2);
+    defs[0][6] = utilsAI.distance(defs[0][0], defs[0][1], defs[0][4], defs[0][5]);
+    defs[0][7] = utilsAI.angle([defs[0][0],defs[0][1]],[defs[0][4], defs[0][5]]);
 
+    
+
+  },
+  //civLoc:[civ1.x + (civ1.width/2), civ1.y + (civ1.height/2)],
+  defaults: [[player.x + (player.width/2), player.y + (player.height/2), 0.1, 0.1, civ1.x + (civ1.width/2), civ1.y + (civ1.height/2), 100, 1]],
+  stateSpace: [[player.x + (player.width/2), player.y + (player.height/2),0.1, 0.1, civ1.x + (civ1.width/2), civ1.y + (civ1.height/2), 100, 1 ]],
+  next_stateSpace: [[player.x + (player.width/2), player.y + (player.height/2), 0.1, 0.1, civ1.x + (civ1.width/2), civ1.y + (civ1.height/2), 100, 1]],
+}
+// [moveX, moveY, speedX, speedY, distance, angle]
 const actionSpace = {
-  numberActions: 2,
-  shape: [2], // not used
-  actions: [0,0], // not used
-  low: [-1,-1],
-  high: [1,1]
+  numberActions: 4,
+  shape: [4], // not used
+  actions: [0,0,0,0], // not used
+  low: [-1,-1,-1,-1],
+  high: [1,1,1,1]
 };
 
 // Can probably set all these to just empty arrays. tf.zeros makes tensors. should be tf.zeros([1, n_actions])? what is the shape?
@@ -117,8 +132,8 @@ class RBuffer {
 class Critic {  // it is possible to combine the 4 critics into 2 critics supposedly
   constructor(inputShape) { // completely different in video. checkpoints models to files here
     this.model = tf.sequential();
-    this.model.add(tf.layers.dense({ inputShape: [inputShape], units: 400, activation: 'relu', dtype: 'float32', kernelInitializer: 'randomNormal'})); // state_dim + action_dim (video 2)
-    this.model.add(tf.layers.dense({ units: 300, activation: 'relu', dtype: 'float32', kernelInitializer: 'randomNormal' }));
+    this.model.add(tf.layers.dense({ inputShape: [inputShape], units: 512, activation: 'relu', dtype: 'float32', kernelInitializer: 'randomNormal'})); // state_dim + action_dim (video 2)
+    this.model.add(tf.layers.dense({ units: 512, activation: 'relu', dtype: 'float32', kernelInitializer: 'randomNormal' }));
     this.model.add(tf.layers.dense({ units: 1, activation: null, dtype: 'float32', kernelInitializer: 'randomNormal' })); // Output to 1 Q value
   }
 
@@ -147,8 +162,8 @@ class Critic {  // it is possible to combine the 4 critics into 2 critics suppos
 class Actor {
   constructor(n_actions,inputShape) { // has alpha in constructor (video)
     this.model = tf.sequential();
-    this.model.add(tf.layers.dense({ inputShape: inputShape, units: 400, activation: 'relu', dtype: 'float32', kernelInitializer: 'randomNormal'  })); // input state_dim (video 2)
-    this.model.add(tf.layers.dense({ units: 300, activation: 'relu', dtype: 'float32', kernelInitializer: 'randomNormal'   }));
+    this.model.add(tf.layers.dense({ inputShape: inputShape, units: 512, activation: 'relu', dtype: 'float32', kernelInitializer: 'randomNormal'  })); // input state_dim (video 2)
+    this.model.add(tf.layers.dense({ units: 512, activation: 'relu', dtype: 'float32', kernelInitializer: 'randomNormal'   }));
     this.model.add(tf.layers.dense({ units: n_actions, activation: 'tanh', dtype: 'float32', kernelInitializer: 'randomNormal'  })); // output units: is number of actions/action space
     // from DDPG paper. pi - tangent hyperbolic, +-1
     // if action bounds are say +-2, multiply that by tanh function before predict/output
@@ -172,26 +187,26 @@ class Actor {
 //Phil: batch_size = 300, warmup = 1000, n_games 1000
 //n_actions = 2, cInputShape = 9, alpha = 0.001, beta = 0.002, gamma = 0.99, tau = 0.005, warmup = 50, RBufferSize = 100000
 class Agent {
-  constructor(n_actions = 2, inputShapeA = 4, inputShapeC = 6, alpha = 0.001, beta = 0.002, gamma = 0.99, tau = 0.005, warmup = 64, RBufferSize = 100000) {                           
+  constructor(n_actions = 4, inputShapeA = 8, inputShapeC = 10, alpha = 0.001, beta = 0.002, gamma = 0.99, tau = 0.005, warmup = 128, RBufferSize = 100000) {                           
     this.actor_main = new Actor(n_actions,inputShapeA);
     this.actor_target = new Actor(n_actions,inputShapeA);
     this.critic_main = new Critic(inputShapeC);
     this.critic_main2 = new Critic(inputShapeC);
     this.critic_target = new Critic(inputShapeC);
     this.critic_target2 = new Critic(inputShapeC);
-    this.batch_size = 32;
+    this.batch_size = 64;
     this.n_actions = n_actions;
     this.a_opt = tf.train.adam(alpha);
     this.c_opt1 = tf.train.adam(beta);
     this.c_opt2 = tf.train.adam(beta);
     this.memory = new RBuffer(RBufferSize, [observationSpace.stateSpace[0].length], this.n_actions); // [stateSpace dimentions]
-    //this.replace = 5;
     this.gamma = gamma;
     this.tau = tau;
     this.actor_update_steps = 2; 
     this.warmup = warmup; // initialy 200
     this.trainstep = 0;
-    this.maxStepCount = 32; // not tied to trainstep
+    this.currentStep = 0;
+    this.maxStepCount = 64; // not tied to trainstep
     this.min_action = actionSpace.low[0];   // negative movement
     this.max_action = actionSpace.high[0];  // positive movement
 
@@ -375,6 +390,7 @@ return returnValue;
       // STEP 8: we keep the minimum of the two Q-values. min(Qt1, Qt2)
       const nextTargetStateValue1 = tf.minimum(targetNextStateValues1_1, targetNextStateValues1_2);
       //console.log(`NTSV: ${nextTargetStateValue1}, ${nextTargetStateValue1.shape}`);
+      //console.log(`Scaled NTSV: ${tf.mul(tf.scalar(agent.gamma), tf.mul(nextTargetStateValue1, donesTensor))}`);
       // STEP 9: we get the final target of the two Critic models (Qt = r + gamma * min(Qt1, Qt2) * dones, where gamma is the discount factor)
       //const targetValues1 = rewards1.add(nextTargetStateValue1.mul(tf.scalar(agent.gamma).mul(donesTensor))); //Phil does 1-dones,mines at save
       const targetValues1 = tf.add(rewards1, tf.mul(tf.scalar(agent.gamma), tf.mul(nextTargetStateValue1, donesTensor)));
@@ -384,7 +400,7 @@ return returnValue;
       const criticValue1 = agent.critic_main.call(statesTensor, actionsTensor).squeeze([1]); // squeese? says wont learn otherwise
       //console.log(`criticValue: ${criticValue1}, ${criticValue1.shape}`);
       const criticLoss1 = tf.losses.meanSquaredError(criticValue1, targetValues1);
-      //console.log(`crit Loss1: ${criticLoss1}, ${criticLoss1.shape}`);
+      //console.log(`crit Loss1: ${criticLoss1}`); // , ${criticLoss1.shape}
      
       return criticLoss1;
     };
@@ -528,87 +544,178 @@ function envStep(action, state, n_steps) {
   const playerSpeed = 5;  // temp hardcode 
   const os = observationSpace.next_stateSpace;
   let hitWall = false;
-  //console.log(`os1: ${observationSpace.next_stateSpace}`);
   //console.log(os);
   //console.log(action);
    // Calculate new positions of entities, resolve collisions, etc.
-   const x = (playerSpeed * actionClone[0]); //ex. (5 * 1 = 5, 5 * 0.5 = 2.5)
-   const y = (playerSpeed * actionClone[1]); //.toFixed(5)
+   const x = (playerSpeed * actionClone[2]); 
+   const y = (playerSpeed * actionClone[3]);
    //console.log(`x: ${x}, y: ${y}`);
    //console.log(`osX: ${os[0][0]}, osY: ${os[0][1]}`);
+
+   //[moveX, moveY, speedX, speedY, civX, civY, distance, angle]
   // move X
-  if (actionClone[0] < -0.001) {
-    if ((os[0][0] - Math.abs(actionClone[0])) < 0.001) {os[0][0] = 0.001; hitWall = true;}
+  if (actionClone[0] < -0.1) { // move left
+    if ((os[0][0] + x) < 0.001) {os[0][0] = 10; hitWall = true;}
     else {os[0][0] += x;}
   }
-  else if (actionClone[0] > 0.001) {
-    if ((os[0][0] + Math.abs(actionClone[0])) > (Game.width - 20)) {os[0][0] = (Game.width - 20); hitWall = true;}
+  else if (actionClone[0] > 0.1) { // move right
+    if ((os[0][0] + x) > (Game.width - 10)) {os[0][0] = (Game.width - 10); hitWall = true;} // player width & height = 20. x,y is center
     else {os[0][0] += x;}
     
   }
   // move Y
-  if (actionClone[1] < -0.001) {
-    if ((os[0][1] - Math.abs(actionClone[1])) < 0.001) {os[0][1] = 0.001;  hitWall = true;}
+  if (actionClone[1] < -0.1) { // move up
+    if ((os[0][1] + y) < 0.001) {os[0][1] = 10;  hitWall = true;}
     else {os[0][1] += y;}
   }
-  else if (actionClone[1] > 0.001) {
-    if ((os[0][1] + Math.abs(actionClone[1])) > (Game.height - 20)) {os[0][1] = (Game.height - 20); hitWall = true;}
+  else if (actionClone[1] > 0.1) { // move down
+    if ((os[0][1] + y) > (Game.height - 10)) {os[0][1] = (Game.height - 10); hitWall = true;}
     else {os[0][1] += y;}
     
   }
+
+  os[0][2] = actionClone[2]; // update agent speed in next_state
+  os[0][3] = actionClone[3];
+
   const mx = os[0][0];
   const my = os[0][1];
   //console.log(`mx: ${mx}, my: ${my}`);
-  Game.agentMoves.push([mx, my])
+  Game.agentMoves.push([mx, my]); // Fore drawing agent paths
+  if (agent.currentStep = 0 && (parseInt(UI.episodeSlider.value) > Game.maxDrawEpisodes)) {
+    Game.entities.splice(0, agent.batch_size);
+  }
+  //if (Game.agentMoves.length > (agent.batch_size * Game.maxDrawBatches))
+
   //animateAgent();
 
   //console.log(`os2: ${observationSpace.next_stateSpace}`);
   //const reward = calculateReward();
   let isDone = false;
   let reward = 0;
-  
+  let penalty = 0;
   //let zomDist = utilsAI.distance(os[0][0],os[0][1],os[0][2],os[0][3]);
  // let civDist = utilsAI.distance(os[0][0],os[0][1],os[0][2],os[0][3]); 
-  let civDist = utilsAI.distance(os[0][0],os[0][1],observationSpace.civLoc[0],observationSpace.civLoc[1]);
-  let civAngle = utilsAI.angle([os[0][0],os[0][1]],[observationSpace.civLoc[0],observationSpace.civLoc[1]]);
-  let angleDeg1 = civAngle * (180 / Math.PI);
-  let angleDeg2 = state[0][3] * (180 / Math.PI);
-  let angleDegDif = Math.abs(angleDeg1 - angleDeg2);
+  let civDist = utilsAI.distance(os[0][0], os[0][1], os[0][4], os[0][5]);
+  let civAngle = utilsAI.angle([os[0][0], os[0][1]], [os[0][4], os[0][5]]);
+  let agentHeading = utilsAI.angle([state[0][0], state[0][1]], [os[0][0],os[0][1]]);
+  let angleDegDif = Math.abs((civAngle * (180 / Math.PI)) - (agentHeading * (180 / Math.PI)));
+  //let angleDeg1 = (civAngle + Math.PI) / (2 * Math.PI); // Normalize to [0, 1];
+  //let angleDeg2 = (os[0][7] + Math.PI) / (2 * Math.PI);
+  //let angleDegDif = Math.abs(angleDeg1 - angleDeg2);
+   // let angleDegDif = Math.abs(civAngle - os[0][5]);
+  //let angleDeg1 = civAngle * (180 / Math.PI);
+  //let angleDeg2 = os[0][5] * (180 / Math.PI);
+  //let angleDegDif = Math.abs(angleDeg1 - angleDeg2);
   //let angleRadDiff = angleDegDif * (Math.PI / 180);
 
   // Assuming angleDegDif is in the range [0, 180]
-let angleReward = 180 - angleDegDif; // Reward increases as angleDegDif approaches 0
-// Scale the angle reward if needed
-let angleRewardScaling = 0.005; // Adjust as needed
-angleReward *= angleRewardScaling;
+  let angleReward = 180 - angleDegDif; // Reward increases as angleDegDif approaches 0
+  // Scale the angle reward if needed
+  let angleRewardScaling = 0.005; // Adjust as needed
+  angleReward *= angleRewardScaling;
+  //let angleReward = 0;
+  // Penalty for significant changes in angle
+  //let scaledAngleDegDif = angleDegDif * 100;
+  //let angleChangePenalty = 2.0; // Adjust as needed
+  //let angleStabilityReward = Math.exp(-angleChangePenalty * scaledAngleDegDif); // Reward increases as angleDegDif approaches 0
+  //angleStabilityReward = angleStabilityReward.toFixed(12);
+  /*
+  if (angleDegDif > 1.5) {angleReward -= 0.5}
+  else if (angleDegDif > 1.0) {angleReward -= 0.3}
+  else if (angleDegDif > 0.5) {angleReward += 0.3}
+  else {angleReward += 0.5}
+  */
+  let distanceReward = 0;
+  let distanceBase = 1 / civDist; // Reward increases as the agent gets closer
+  // Scale the distance reward if needed
+  let distanceRewardScaling = 0.1; // Adjust as needed
+  distanceBase *= distanceRewardScaling;
+  distanceBase *= 100;
 
-let distanceReward = 1 / civDist; // Reward increases as the agent gets closer
-// Scale the distance reward if needed
-let distanceRewardScaling = 0.1; // Adjust as needed
-distanceReward *= distanceRewardScaling;
-if (civDist > os[0][2]) {distanceReward -= 0.5}
-else if (civDist < os[0][2]) {distanceReward += 0.5;}
+  const stateDifX = Math.abs(state[0][0] - os[0][4]);
+  const stateDifY = Math.abs(state[0][1] - os[0][5]);
+  const n_stateDifX = Math.abs(os[0][0] - os[0][4]);
+  const n_stateDifY = Math.abs(os[0][1] - os[0][5]);
 
+  if (n_stateDifX < stateDifX) {distanceReward += 0.4}
+  else if (n_stateDifX > stateDifX) {penalty += 0.5}
+  if (n_stateDifY < stateDifY) {distanceReward += 0.4}
+  else if (n_stateDifY > stateDifY) {penalty += 0.5}
+  //if (civDist < os[0][6]) {distanceReward += 0.5}
+  //else if (civDist > os[0][6]) {penalty += 0.5}
+  //if (civDist > os[0][6]) {distanceReward -= (0.5 + distanceBase); }
+  //else if (civDist < os[0][6]) {distanceReward += (0.5 + distanceBase);}
 
-let totalReward = distanceReward + angleReward;
-// Update the agent's reward
-reward += totalReward; 
+  // removed because I made a time penalty which should amount to the same behavior
+  //if ((actionClone[0] > -0.1 && actionClone[0] < 0.1) && (actionClone[1] > -0.1 && actionClone[1] < 0.1)) {penalty += 0.2}
+ 
+  let totalReward = distanceReward + distanceBase + angleReward;
+  //  - (angleDegDif * 2)
+  reward += totalReward;
+  /*
+  //const minVal = 0; // having negative here allows a possitive reward can scale into a negative
+  //const maxVal = 3;
 
+  function scaleToMinusOneToOne(x, minVal, maxVal) {
+    let scaledValue = -1 + 2 * (x - minVal) / (maxVal - minVal);
+    return Math.min(1, Math.max(-1, scaledValue)); // if values go over they should clamp to -1 or 1
+}
+*/
+function scaleZeroOne(x) {
+  return x / (x + 1);
+}
+function scaleWithTanh(x) {
+  return Math.tanh(x);
+}
+function calculateTimePenalty() {
+  const maxPenalty = -0.1; // Adjust as needed
+  console.log(`step: ${agent.currentStep}`);
+  console.log(`max step: ${agent.maxStepCount}`);
+  const timeRatio = agent.currentStep / agent.maxStepCount;
+  const timePenalty = maxPenalty * timeRatio;
+  return timePenalty;
+}
   //reward -= angleDegDif;
-  console.log(`step: ${n_steps}, civ Dist: ${civDist}`);
+  //console.log(`step: ${n_steps}, civ Dist: ${civDist}`);
   console.log(`distanceReward: ${distanceReward}`);
-  console.log(`civAngle: ${civAngle}`);
-  console.log(`angleDegDif: ${angleDegDif}`);
-  console.log(`angleReward: ${angleReward}`);
-  console.log(`total Reward: ${totalReward}`);
+  console.log(`distanceBase: ${distanceBase}`);
+  //console.log(`civAngle: ${civAngle}`);
+  //console.log(`angleDeg 1: ${angleDeg1}`);
+  //console.log(`angleDeg 2: ${angleDeg2}`);
+  //console.log(`angleDegDif: ${angleDegDif}`);
+ // console.log(`scaled angle dif: ${scaledAngleDegDif}`);
+  console.log(`angle Reward: ${angleReward}`);
+  //console.log(`stability Reward: ${angleStabilityReward}`);
+  //console.log(`total Reward: ${totalReward}`);
   //console.log(`angleRadDiff: ${angleRadDiff}`);
   //if((civAngle - state[0][3]) > 0.2 ) {reward += 0.5}
   //else {reward += 0.5}
-  os[0][2] = JSON.parse(JSON.stringify(civDist));
-  os[0][3] = civAngle;
+  os[0][6] = civDist;
+  os[0][7] = civAngle;
   if (civDist <= player.width) {reward += 5; console.warn("AGENT FOUND CIVILIAN!");isDone = true;}
-  if (hitWall) {reward -= 1}
- 
+  if (hitWall) {penalty += 1}
+  //const scaledReward = scaleZeroOne(reward);
+  //const scaledPenalty = scaleZeroOne(penalty);
+  //reward = scaledReward - scaledPenalty;
+  // Pseudocode for time-dependent penalty
+
+  //const currentStep = agent.currentStep; 
+  //const maxSteps = agent.maxStepCount; 
+  const timePenalty = calculateTimePenalty();
+ // if (stepNumber % 3 === 0) {}
+
+  penalty += timePenalty; // pos or neg?
+  console.log(`penalty: ${penalty}`);
+  reward = reward - penalty;
+  //console.log(`pre-scaled reward: ${reward}`);
+  //reward = scaleWithTanh(reward);
+  
+  
+  //reward = scaleToMinusOneToOne(reward, minVal, maxVal);
+  //console.log(`scaled reward: ${scaledReward}`);
+  //console.log(`scaled penalty: ${scaledPenalty}`);
+  console.log(`time penalty: ${timePenalty}`);
+  
   console.log(`reward: ${reward}`);
   //1rad × 180/π = 57.296°
   //1° × π/180 = 0.01745rad
@@ -623,24 +730,6 @@ reward += totalReward;
 
 // Update the reward
 //reward -= angleScaling * normalizedAngle;
-
-
-
-  //let lMX = (10 * Math.sin(angle));
-  //let lMY = (10 * Math.cos(angle));
-  //let moveX = (speed * Math.sin(angle));
-  //let moveY = (speed * Math.cos(angle));
-  //console.log(`civAngle: ${civAngle}`);
-  //civLoc:[400,150],
-  //console.log(os[0]);
-  
-
-  //if (civDist > os[0][2]) {reward -= 0.5}
- // else if (civDist < os[0][2]) {reward += 0.5;}
-  
-  //os[0][6] = observationSpace.targetDist
-  //console.log(os[0][6]);
-
   
   /*
   //let collider = collideCheck(actionClone,true);
@@ -668,13 +757,21 @@ reward += totalReward;
 // Math.seedrandom() ?
 
 const agent = new Agent(actionSpace.numberActions, observationSpace.stateSpace[0].length, observationSpace.stateSpace[0].length + actionSpace.numberActions); 
-const episodes = 5; ///100 - 2000 // check batches size
+let episodes = 5; ///100 - 2000 // check batches size
+//agent.batch_size = 32; // shortcut. Batch size for memory buffer. these are overidden below.
+//agent.maxStepCount = 32; // shortcut. steps to take per episode.
 const epReward = [];
 const totalAvgReward = [];
-let target = false;
+//let target = false;
 
-function main() {  // Removed async   // 
-  observationSpace.initUpdate();
+function main(epNum,stepSize,batchSize,warmupSteps) {  // Removed async   // 
+  let target = false;
+  if (epNum && !isNaN(epNum) && epNum > 0) {episodes = epNum}
+  if (stepSize && !isNaN(stepSize) && stepSize > 0) {agent.maxStepCount = stepSize}
+  if (batchSize && !isNaN(batchSize) && batchSize > 0) {agent.batch_size = batchSize}
+  if (warmupSteps && !isNaN(warmupSteps) && warmupSteps > 0) {agent.warmup = warmupSteps}
+  //if(agent.memory.cnt == 0) {observationSpace.initUpdate();}
+  observationSpace.initUpdate()
   for (let s = 0; s < episodes; s++) {
     if (!Game.running) {break}
     if (target) {
@@ -685,6 +782,7 @@ function main() {  // Removed async   //
     let state = envReset(); // make sure is right shape!
     let done = false;
     let n_steps = 0;
+    agent.currentStep = 0;
     let stepDone = false;
    
     while (!done) {
@@ -726,6 +824,7 @@ function main() {  // Removed async   //
       
       if (n_steps >= agent.maxStepCount) {stepDone = true} // forcing batch size episodes
       n_steps++
+      agent.currentStep++;
       
 
       if (isDone || stepDone) {
