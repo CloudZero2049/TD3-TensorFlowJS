@@ -27,19 +27,19 @@ canvas {position: absolute;
 #bgcanvas {z-index: 1;}
 
 #infoDiv {position: absolute;
-            top: 20px;
+            top: 10px;
             left: 700px;
             z-index: 3;
         }
-#buttonsDiv {position: absolute;
-    top: 100px;
-    left: 700px;
+#buttonsDiv {position: relative;
+    top: 0px;
+    left: 0px;
     z-index: 3;
 }
 .slidecontainer {
-    position: absolute;
-    top: 200px;
-    left: 700px;
+    position: relative;
+    top: 20px;
+    left: 0px;
     z-index: 3;
      /*width: 100%; Width of the outside container */
 }
@@ -48,7 +48,7 @@ canvas {position: absolute;
 .slider {
   -webkit-appearance: none;  /* Override default CSS styles */
   appearance: none;
-  width: 200px; /* Full-width */
+  width: 300px; /* Full-width */
   height: 10px; /* Specified height */
   background: #d3d3d3; /* Grey background */
   outline: none; /* Remove outline */
@@ -89,25 +89,45 @@ canvas {position: absolute;
 <div id="infoDiv">
     <p id="rewardTextArea">Rewards:</p>
     <p id="punishTextArea">punishments:</p>
-</div>
 
 <div id="buttonsDiv">
     <button id="startPlayerButton" onclick="Game.start(`player`);" disabled="true">Start Player</button>
     <button id="startTD3Button" onclick="Game.start(`TD3`);" disabled="true">Start TD3 AI</button>
     <!-- <button id="classButton" onclick="classify()" disabled="true">Classify</button> -->
     <!--  <button id="saveModelButton" onclick="saveModel()" disabled="true">Save Model</button> -->
+    <input type="checkbox" id="pathsCheckbox" name="pathsCheckbox" />
+    <label for="pathsCheckbox">Keep Agent Paths?</label>
+    
 </div>
 <div class="slidecontainer">
-    <input type="range" min="10" max="570" value="150" class="slider" id="agentRangeX">
-    <p id="aRangeInfoX">Agent Start X: 150</p>
-    <input type="range" min="10" max="470" value="150" class="slider" orient="vertical" id="agentRangeY">
-    <p id="aRangeInfoY">Agent Start Y: 150</p>
-    <input type="range" min="10" max="570" value="400" class="slider" id="civRangeX">
-    <p id="cRangeInfoX">Civilian Start Y: 400</p>
-    <input type="range" min="10" max="470" value="200" class="slider" orient="vertical" id="civRangeY">
-    <p id="cRangeInfoY">Civilian Start Y: 200</p>
-  </div>
+    <input type="range" min="1" max="1000" value="5" class="slider" id="episodeRange">
+    <label for="episodeRange" id="episodeInfo">Episodes: 5</label></br>
   
+    <input type="range" min="1" max="1000" value="64" class="slider" id="stepRange">
+    <label for="stepRange" id="stepInfo">Steps: 64</label></br>
+
+    <input type="range" min="1" max="500" value="64" class="slider" id="batchRange">
+    <label for="batchRange" id="batchInfo">Batch Size: 64</label></br>
+
+    <input type="range" min="1" max="1000" value="128" class="slider" id="warmupRange">
+    <label for="warmupRange" id="warmupInfo">Warmup Steps: 128</label></br></br>
+
+    <input type="range" min="10" max="570" value="150" class="slider" id="agentRangeX">
+    <label for="agentRangeX" id="aRangeInfoX">Agent Start X: 150</label></br>
+   
+    <input type="range" min="10" max="470" value="150" class="slider" id="agentRangeY">
+    <label for="agentRangeY" id="aRangeInfoY">Agent Start Y: 150</label></br>
+   
+    <input type="range" min="10" max="570" value="400" class="slider" id="civRangeX">
+    <label for="civRangeX" id="cRangeInfoX">Civilian Start Y: 400</label></br>
+    
+    <input type="range" min="10" max="470" value="200" class="slider" id="civRangeY">
+    <label for="civRangeY" id="cRangeInfoY">Civilian Start Y: 200</label></br></br>
+    
+    
+  </div>
+ <p><color="red"><font color="red">You can use left and right arrows after clicking a slider for fine tuning</font></p>
+</div>
 <script src="utils.js"> </script>
 <script src="Classes.js"> </script>
 <script src="game.js"></script>
@@ -115,43 +135,74 @@ canvas {position: absolute;
 <script src="collisions.js"> </script>
 <script src="keyboardControl.js"> </script>
 <script>
-    let aSliderX = document.getElementById("agentRangeX");
+    //let episodeSlider = document.getElementById("episodeRange");
+    let episodeOutput = document.getElementById("episodeInfo");
+    episodeOutput.innerHTML = `Episodes: ${UI.episodeSlider.value}`; // Display the default slider value
+
+    //let stepSlider = document.getElementById("stepRange");
+    let stepOutput = document.getElementById("stepInfo");
+    stepOutput.innerHTML = `Steps: ${UI.stepSlider.value}`;
+
+    //let batchSlider = document.getElementById("batchRange");
+    let batchOutput = document.getElementById("batchInfo");
+    batchOutput.innerHTML = `Batch Size: ${UI.batchSlider.value}`;
+
+    //let warmupSlider = document.getElementById("warmupRange");
+    let warmupOutput = document.getElementById("warmupInfo");
+    warmupOutput.innerHTML = `Warmup Steps: ${UI.warmupSlider.value}`;
+
+    //let aSliderX = document.getElementById("agentRangeX");
     let aOutputX = document.getElementById("aRangeInfoX");
-    aOutputX.innerHTML = `Agent Start X: ${aSliderX.value}`; // Display the default slider value
+    aOutputX.innerHTML = `Agent Start X: ${UI.aSliderX.value}`;
 
-    let aSliderY = document.getElementById("agentRangeY");
+    //let aSliderY = document.getElementById("agentRangeY");
     let aOutputY = document.getElementById("aRangeInfoY");
-    aOutputY.innerHTML = `Agent Start Y: ${aSliderY.value}`;
+    aOutputY.innerHTML = `Agent Start Y: ${UI.aSliderY.value}`;
 
-    let cSliderX = document.getElementById("civRangeX");
+    //let cSliderX = document.getElementById("civRangeX");
     let cOutputX = document.getElementById("cRangeInfoX");
-    cOutputX.innerHTML = `Civilian Start X: ${cSliderX.value}`;
+    cOutputX.innerHTML = `Civilian Start X: ${UI.cSliderX.value}`;
 
-    let cSliderY = document.getElementById("civRangeY");
+    //let cSliderY = document.getElementById("civRangeY");
     let cOutputY = document.getElementById("cRangeInfoY");
-    cOutputY.innerHTML = `Civilian Start Y: ${cSliderY.value}`;
+    cOutputY.innerHTML = `Civilian Start Y: ${UI.cSliderY.value}`;
 
     // Update the current slider value (each time you drag the slider handle)
-    aSliderX.oninput = function() {
-        aOutputX.innerHTML = `Agent Start X: ${this.value}`;
-        
-        player.x = parseInt(this.value);
-        Game.redrawInit();
+    UI.episodeSlider.oninput = function() {
+      episodeOutput.innerHTML = `Episodes: ${this.value}`;
     }
-    aSliderY.oninput = function() {
-        aOutputY.innerHTML = `Agent Start Y: ${this.value}`;
-        player.y = parseInt(this.value);
-        Game.redrawInit();
+    UI.stepSlider.oninput = function() {
+      stepOutput.innerHTML = `Steps: ${this.value}`;
     }
-    cSliderX.oninput = function() {
-        cOutputX.innerHTML = `Civilian Start X: ${this.value}`;
-        civ1.x = parseInt(this.value);
-        Game.redrawInit();
+    UI.batchSlider.oninput = function() {
+      batchOutput.innerHTML = `Batch Size: ${this.value}`;
     }
-    cSliderY.oninput = function() {
-        cOutputY.innerHTML = `Civilian Start Y: ${this.value}`;
-        civ1.y = parseInt(this.value);
-        Game.redrawInit();
+    UI.warmupSlider.oninput = function() {
+      warmupOutput.innerHTML = `Warmup Steps: ${this.value}`;
+    }
+    UI.aSliderX.oninput = function() {
+      let x = parseInt(this.value) + player.width / 2;
+      aOutputX.innerHTML = `Agent Start X: ${x}`;
+      player.x = parseInt(this.value);
+      Game.redrawInit();
+    }
+    UI.aSliderY.oninput = function() {
+      let y = parseInt(this.value) + player.height / 2;
+      aOutputY.innerHTML = `Agent Start Y: ${y}`;
+      player.y = parseInt(this.value);
+      Game.redrawInit();
+    }
+    UI.cSliderX.oninput = function() {
+      let x = parseInt(this.value) + civ1.width / 2;
+      cOutputX.innerHTML = `Civilian Start X: ${x}`;
+      civ1.x = parseInt(this.value);
+      Game.redrawInit();
+    }
+    UI.cSliderY.oninput = function() {
+      let y = parseInt(this.value) + civ1.height / 2;
+      cOutputY.innerHTML = `Civilian Start Y: ${y}`;
+      civ1.y = parseInt(this.value);
+      Game.redrawInit();
     }
 
 
