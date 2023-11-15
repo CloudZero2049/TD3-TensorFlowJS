@@ -1,8 +1,8 @@
 [CURENT WORK]
 
-1) The agent appears to be learning. I'm fine tuning the reward system and I'm going to try seperating agent actions into 4 areas. 2 for x,y movement (up or down, left or right), and 2 for x,y speed (how far it moves on each axis. This gives a broader range of movement)
+1) I've been researching and fine tuning the reward system to try and get some real results from training the agent.
 
-2) right now, The slower the agent moves towards the civilian the higher his reward (unless he touches the civilian for a bonus)
+2) I still need final verification on the full setup of the program to ensure there's no loose ends (very dificult without help as I am just learning). At least it appears to be mostly working as expected.
 
 [CHANGE LOG]
 
@@ -90,3 +90,39 @@
 4) added html sliders to set agent and civilian positions (script on index.html).
 
 5) changes to reward system (currently working on this)
+
+6) changed movement clipping to -0.1 and 0.1
+
+7) created a "sit penalty" to help prevent agent from sitting still to collect angle reward.
+
+8) re-enabled "Start TD3 AI" button after run. resets shown agent paths.
+
+9) added checkbox to keep displayed agent paths [checked], or to erase them befor each run.
+
+[11/13/23]
+
+1) added player x,y speed to observation space.
+
+2) re-added civilian x,y coordinates to observation space.
+
+3) increased layer units back up to 512
+
+4) agent movement reward is now based on each x and y change individually instead of lumping them together.
+
+5) agent "player" and civilian can now be moved after each run.
+
+6) able to set episodes, steps, batch size, and warmup steps before the FIRST run. steps, batch size, and warmup will be disabled after the first run.
+
+[11,14,23]
+
+1) added a "currentStep" variable to Agent class to be used with reward timers.
+
+2) created a UI JS object for sliders (game.js).
+
+3) actually added agent speed updates to observation space
+
+4) included a Game.maxDrawEpisodes variable to limit how many agent paths are drawn (older paths get spliced).
+
+5) more work on reward function. I removed the normalization of the final value for now as it seems to improve the agent drasticaly. However, this does mean I must be extra carefull with the values of the reward fucntion.
+
+6) removed sitPenalty because I'm using a time-based (step-based) penalty system instead.
