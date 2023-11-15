@@ -15,8 +15,19 @@ const punishTextArea = document.getElementById("punishTextArea");
 
 
 let player, civ1;
+const UI = {
+    pathsCheckbox: document.getElementById("pathsCheckbox"),
+    episodeSlider: document.getElementById("episodeRange"),
+    stepSlider: document.getElementById("stepRange"),
+    batchSlider: document.getElementById("batchRange"),
+    warmupSlider: document.getElementById("warmupRange"),
+    aSliderX: document.getElementById("agentRangeX"),
+    aSliderY: document.getElementById("agentRangeY"),
+    cSliderX: document.getElementById("civRangeX"),
+    cSliderY: document.getElementById("civRangeY")
+}
 
-let Game = {
+const Game = {
     running: false, 
     user: "TD3",
     width: 600,
@@ -26,6 +37,7 @@ let Game = {
     entityCounter: 0,
     rewards: 0,
     punishments: 0,
+    maxDrawEpisodes: 25,
     agentMoves: [],
     init: function() {
         this.drawBG();
@@ -53,31 +65,50 @@ let Game = {
         
         startPlayerButton.disabled = true;
         startTD3Button.disabled = true;
-        const aSliderX = document.getElementById("agentRangeX");
-        const aSliderY = document.getElementById("agentRangeY");
-        const cSliderX = document.getElementById("civRangeX");
-        const cSliderY = document.getElementById("civRangeY");
-        aSliderX.disabled = true;
-        aSliderY.disabled = true;
-        cSliderX.disabled = true;
-        cSliderY.disabled = true;
-        aSliderX.hidden = true;
-        aSliderY.hidden = true;
-        cSliderX.hidden = true;
-        cSliderY.hidden = true;
+        //const episodeSlider = document.getElementById("episodeRange");
+        //const stepSlider = document.getElementById("stepRange");
+        //const batchSlider = document.getElementById("batchRange");
+        //const warmupSlider = document.getElementById("warmupRange");
+        //const aSliderX = document.getElementById("agentRangeX");
+        //const aSliderY = document.getElementById("agentRangeY");
+        //const cSliderX = document.getElementById("civRangeX");
+        //const cSliderY = document.getElementById("civRangeY");
+        //UI.episodeSlider.style.background = "black";
+        UI.stepSlider.style.background = "black";
+        UI.batchSlider.style.background = "black";
+        UI.warmupSlider.style.background = "black";
+        UI.episodeSlider.disabled = true;
+        UI.stepSlider.disabled = true;
+        UI.batchSlider.disabled = true;
+        UI.warmupSlider.disabled = true;
+        UI.aSliderX.disabled = true;
+        UI.aSliderY.disabled = true;
+        UI.cSliderX.disabled = true;
+        UI.cSliderY.disabled = true;
         
         if (this.user == "TD3") {
             player.user = "TD3";
-            //observationSpace.initUpdate([aSliderX.value,aSliderY.value],[cSliderX.value,cSliderY.value]);
-            main();
+            Game.agentMoves = [];
+            const episodes = UI.episodeSlider.value;
+            const steps = UI.stepSlider.value;
+            const batchSize = UI.batchSlider.value;
+            const warmupSteps = UI.warmupSlider.value;
+            main(episodes,steps,batchSize,warmupSteps);
+            console.info(tf.memory());
+            console.info("TD3 Complete");
+            this.running = false;
+            startTD3Button.disabled = false;
+            UI.episodeSlider.disabled = false;
+            UI.aSliderX.disabled = false;
+            UI.aSliderY.disabled = false;
+            UI.cSliderX.disabled = false;
+            UI.cSliderY.disabled = false;
         }
         else if(this.user == "player") {
             player.user = "human";
             animate(); 
         }
-        console.info(tf.memory());
-        console.info("TD3 Complete");
-        //startTD3Button.disabled = false;
+        
     },
     stop: function() {
         if (!this.running) {return}
@@ -94,6 +125,7 @@ let Game = {
 
     },
     drawBG: function() {
+        ctxBG.clearRect(0,0,Game.width,Game.height);
         ctxBG.beginPath;
         ctxBG.fillStyle = "rgb(204, 255, 221)";
         ctxBG.fillRect(0,0,bgCanvas.width,bgCanvas.height);
@@ -156,6 +188,8 @@ function animate() {
    
 }
 function animateAgent() {
+    //let checkbox = document.getElementById("pathsCheckbox");
+    if (!UI.pathsCheckbox.checked) {Game.drawBG();}
     ctx.clearRect(player.x-1,player.y-1,player.width+2,player.height+2);
     let c1 = 0;
     let c2 = 0;
@@ -183,7 +217,7 @@ function animateAgent() {
         break; 
       }
       a = 0.5;
-      let aCutoff = (Game.agentMoves.length / 2) // 01234 56789
+      let aCutoff = (Game.agentMoves.length / 2) // 01234 56789 // adding transparency to the dots
       if (i > aCutoff) {
         let cutFifth = aCutoff / 5;
         let b = 0;
@@ -207,10 +241,12 @@ function animateAgent() {
 
    }
 
-    player.x = Game.agentMoves[Game.agentMoves.length -1][0];
-    player.y = Game.agentMoves[Game.agentMoves.length -1][1];
+    player.x = (Game.agentMoves[Game.agentMoves.length -1][0]) - (player.width / 2);  // getting the top left corner
+    player.y = (Game.agentMoves[Game.agentMoves.length -1][1]) - (player.height / 2);
     
+    civ1.draw()
     player.draw();
+
 }
 // map width: 600,
 // mapheight: 500,
