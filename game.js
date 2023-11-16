@@ -193,9 +193,15 @@ function animateAgent() {
     ctx.clearRect(player.x-1,player.y-1,player.width+2,player.height+2);
     let c1 = 0;
     let c2 = 0;
-   for (let i = 0; i < Game.agentMoves.length; i++) {
-    let moveX = (Game.agentMoves[i][0]) + (player.width / 2);
-    let moveY = (Game.agentMoves[i][1]) + (player.height / 2);
+    let start = 0;
+    let max = agent.batch_size * 15;
+    if (Game.agentMoves.length > max) {
+        start = Game.agentMoves.length - max;
+    }
+     
+   for (let i = start; i < Game.agentMoves.length; i++) {
+    let moveX = (Game.agentMoves[i][0]) - (player.width / 2); // getting corner for drawing
+    let moveY = (Game.agentMoves[i][1]) - (player.height / 2);
     //console.log(`moveX: ${moveX}, moveY: ${moveY }`);
     //let r = Math.floor(Math.random() * (255 + 1))
     //let g = Math.floor(Math.random() * (255 + 1))
