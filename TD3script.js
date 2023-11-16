@@ -26,31 +26,38 @@ const utilsAI = {
 
 //observationSpace.stateSpace.length
 const observationSpace ={ 
-  //[agentX,agentY,agentSpeedX ,agentSpeedY,civilianX,civilianY,dist to civ, angle to civ] 8 total
+  //[agentX,agentY, directionX, directionY, agentSpeedX ,agentSpeedY,civilianX,civilianY,dist to civ, angle to civ] 10 total
   initUpdate: function() { // [0,0],[0,0]
     let defs = this.defaults;
     const aSliderX = document.getElementById("agentRangeX");
     const aSliderY = document.getElementById("agentRangeY");
     const cSliderX = document.getElementById("civRangeX");
     const cSliderY = document.getElementById("civRangeY");
-    //let ss = this.stateSpace;
-    //let nss = this.next_stateSpace;
-    //this.civLoc[0] = civ1.x + (civ1.width/2);
-    //this.civLoc[1] = civ1.y + (civ1.height/2);
+  
     defs[0][0] = parseInt(aSliderX.value) + (player.width/2);
     defs[0][1] = parseInt(aSliderY.value) + (player.height/2);
-    defs[0][4] = parseInt(cSliderX.value) + (civ1.width/2);
-    defs[0][5] = parseInt(cSliderY.value) + (civ1.height/2);
-    defs[0][6] = utilsAI.distance(defs[0][0], defs[0][1], defs[0][4], defs[0][5]);
-    defs[0][7] = utilsAI.angle([defs[0][0],defs[0][1]],[defs[0][4], defs[0][5]]);
-
-    
+    defs[0][6] = parseInt(cSliderX.value) + (civ1.width/2);
+    defs[0][7] = parseInt(cSliderY.value) + (civ1.height/2);
+    defs[0][8] = utilsAI.distance(defs[0][0], defs[0][1], defs[0][4], defs[0][5]);
+    defs[0][9] = utilsAI.angle([defs[0][0],defs[0][1]],[defs[0][4], defs[0][5]]);
 
   },
+  locNums: {
+    aX: 0,
+    aY: 1,
+    dX: 2,
+    dY: 3,
+    sX: 4,
+    sY: 5,
+    cX: 6,
+    cY: 7,
+    dist: 8,
+    angle: 9,
+  },
   //civLoc:[civ1.x + (civ1.width/2), civ1.y + (civ1.height/2)],
-  defaults: [[player.x + (player.width/2), player.y + (player.height/2), 0.1, 0.1, civ1.x + (civ1.width/2), civ1.y + (civ1.height/2), 100, 1]],
-  stateSpace: [[player.x + (player.width/2), player.y + (player.height/2),0.1, 0.1, civ1.x + (civ1.width/2), civ1.y + (civ1.height/2), 100, 1 ]],
-  next_stateSpace: [[player.x + (player.width/2), player.y + (player.height/2), 0.1, 0.1, civ1.x + (civ1.width/2), civ1.y + (civ1.height/2), 100, 1]],
+  defaults: [[player.x + (player.width/2), player.y + (player.height/2), 0, 0, 0.1, 0.1, civ1.x + (civ1.width/2), civ1.y + (civ1.height/2), 100, 1]],
+  stateSpace: [[player.x + (player.width/2), player.y + (player.height/2), 0, 0, 0.1, 0.1, civ1.x + (civ1.width/2), civ1.y + (civ1.height/2), 100, 1 ]],
+  next_stateSpace: [[player.x + (player.width/2), player.y + (player.height/2), 0, 0, 0.1, 0.1, civ1.x + (civ1.width/2), civ1.y + (civ1.height/2), 100, 1]],
 }
 // [moveX, moveY, speedX, speedY, distance, angle]
 const actionSpace = {
@@ -181,13 +188,13 @@ class Actor {
 }
 //alpha,beta,input_dims,tau,env,gamma,update_actor_interval = 2, warmup = 1000, n_actions=2,max_size=1000000,layer1_size=400,layer2_size=300, batch_size=100,noise=0.1 (video)
 //min-max actions is because of noise (video)
-
+//warmups. 32,64,128,256,512
 // alpha = learning rate for actor (.001), beta = learning rate for critic (.002), tau = target weight update rate (slow is good)
 //gamma = discount factor (0 is immediate rewards, 1 is long term rewards and possibly more exploration)
 //Phil: batch_size = 300, warmup = 1000, n_games 1000
 //n_actions = 2, cInputShape = 9, alpha = 0.001, beta = 0.002, gamma = 0.99, tau = 0.005, warmup = 50, RBufferSize = 100000
 class Agent {
-  constructor(n_actions = 4, inputShapeA = 8, inputShapeC = 10, alpha = 0.001, beta = 0.002, gamma = 0.99, tau = 0.005, warmup = 128, RBufferSize = 100000) {                           
+  constructor(n_actions = 4, inputShapeA = 8, inputShapeC = 10, alpha = 0.0001, beta = 0.002, gamma = 0.90, tau = 0.005, warmup = 64, RBufferSize = 100000) {                           
     this.actor_main = new Actor(n_actions,inputShapeA);
     this.actor_target = new Actor(n_actions,inputShapeA);
     this.critic_main = new Critic(inputShapeC);
@@ -205,7 +212,6 @@ class Agent {
     this.actor_update_steps = 2; 
     this.warmup = warmup; // initialy 200
     this.trainstep = 0;
-    this.currentStep = 0;
     this.maxStepCount = 64; // not tied to trainstep
     this.min_action = actionSpace.low[0];   // negative movement
     this.max_action = actionSpace.high[0];  // positive movement
@@ -379,9 +385,9 @@ return returnValue;
       //console.log(`rewards1: ${rewards1}`);
       //console.log(`dones: ${donesTensor}`);
       // STEP 6: We add Gaussian noise to the next action a` and we clamp it in a range of values supported by environment
-      const ranNormalActions1 = tf.clone(tf.add(targetActions1, tf.clipByValue(tf.randomNormal(targetActions1.shape, 0.0, 0.2), -0.5, 0.5)));//.map(tf.clone); // video 2 uses actionsTensor?
+      const ranNormalActions1 = tf.add(targetActions1, tf.clipByValue(tf.randomNormal(targetActions1.shape, 0.0, 0.2), -0.5, 0.5));//.map(tf.clone); // video 2 uses actionsTensor?
       //console.log(`randomNormal actions: ${ranNormalActions1}, ${ranNormalActions1.shape}`);
-      const clipActions1 = tf.clone(tf.mul(tf.scalar(agent.max_action), tf.clipByValue(ranNormalActions1, agent.min_action, agent.max_action)));//.map(tf.clone); 
+      const clipActions1 = tf.mul(tf.scalar(agent.max_action), tf.clipByValue(ranNormalActions1, agent.min_action, agent.max_action));//.map(tf.clone); 
       //console.log(`cliped actions: ${clipActions1}, ${clipActions1.shape}`);
       // STEP 7: The two Critic targets take each the couple (s`, a`) as input and return two Q-values as outputs
       const targetNextStateValues1_1 = agent.critic_target.call(nextStatesTensor, clipActions1).squeeze([1]);
@@ -409,8 +415,8 @@ return returnValue;
       const targetActions2 = agent.actor_target.call(nextStatesTensor); 
       const rewards2 = tf.clone(rewardsTensor);
 
-      const ranNormalActions2 = tf.clone(tf.add(targetActions2, tf.clipByValue(tf.randomNormal(targetActions2.shape, 0.0, 0.2), -0.5, 0.5)));
-      const clipActions2 = tf.clone(tf.mul(tf.scalar(agent.max_action), tf.clipByValue(ranNormalActions2, agent.min_action, agent.max_action)));
+      const ranNormalActions2 = tf.add(targetActions2, tf.clipByValue(tf.randomNormal(targetActions2.shape, 0.0, 0.2), -0.5, 0.5));
+      const clipActions2 = tf.mul(tf.scalar(agent.max_action), tf.clipByValue(ranNormalActions2, agent.min_action, agent.max_action));
     
       const targetNextStateValues2_1 = agent.critic_target.call(nextStatesTensor, clipActions2).squeeze([1]);
       const targetNextStateValues2_2 = agent.critic_target2.call(nextStatesTensor, clipActions2).squeeze([1]);
@@ -539,12 +545,14 @@ function envReset() {
 
 
 
-function envStep(action, state, n_steps) {
+function envStep(action, state, currentStep) {
   const actionClone = JSON.parse(JSON.stringify(action));
   const playerSpeed = 5;  // temp hardcode 
   const os = observationSpace.next_stateSpace;
+  const LN = observationSpace.locNums
   let hitWall = false;
-  //console.log(os);
+  //locNums: {aX: 0,aY: 1,dx: 2,dY: 3,sX: 4,sY: 5,cX: 6,cY: 7,dist: 8, angle: 9,}
+
   //console.log(action);
    // Calculate new positions of entities, resolve collisions, etc.
    const x = (playerSpeed * actionClone[2]); 
@@ -552,38 +560,45 @@ function envStep(action, state, n_steps) {
    //console.log(`x: ${x}, y: ${y}`);
    //console.log(`osX: ${os[0][0]}, osY: ${os[0][1]}`);
 
-   //[moveX, moveY, speedX, speedY, civX, civY, distance, angle]
+    //locNums: {aX: 0,aY: 1,dx: 2,dY: 3,sX: 4,sY: 5,cX: 6,cY: 7,dist: 8, angle: 9,}
+   //[agentX, agentY, directionX, directionY, speedX, speedY, civX, civY, distance, angle]
   // move X
-  if (actionClone[0] < -0.1) { // move left
-    if ((os[0][0] + x) < 0.001) {os[0][0] = 10; hitWall = true;}
-    else {os[0][0] += x;}
+  if (actionClone[0] < -0.3) { // move left
+    if ((os[0][LN.aX] + x) < 10) {os[0][LN.aX] = 10; hitWall = true;}
+    else {os[0][LN.aX] += x;}
+    os[0][LN.dX] = -1;
   }
-  else if (actionClone[0] > 0.1) { // move right
-    if ((os[0][0] + x) > (Game.width - 10)) {os[0][0] = (Game.width - 10); hitWall = true;} // player width & height = 20. x,y is center
-    else {os[0][0] += x;}
-    
+  else if (actionClone[0] > 0.3) { // move right
+    if ((os[0][LN.aX] + x) > (Game.width - 10)) {os[0][LN.aX] = (Game.width - 10); hitWall = true;} // player width & height = 20. x,y is center
+    else {os[0][LN.aX] += x;}
+    os[0][LN.dX] = 1;
   }
+  else {os[0][LN.dX] = 0;} 
+
   // move Y
-  if (actionClone[1] < -0.1) { // move up
-    if ((os[0][1] + y) < 0.001) {os[0][1] = 10;  hitWall = true;}
-    else {os[0][1] += y;}
+  if (actionClone[1] < -0.3) { // move up
+    if ((os[0][LN.aY] + y) < 10) {os[0][LN.aY] = 10;  hitWall = true;}
+    else {os[0][LN.aY] += y;}
+    os[0][LN.dY] = -1;
   }
-  else if (actionClone[1] > 0.1) { // move down
-    if ((os[0][1] + y) > (Game.height - 10)) {os[0][1] = (Game.height - 10); hitWall = true;}
-    else {os[0][1] += y;}
-    
+  else if (actionClone[1] > 0.3) { // move down
+    if ((os[0][LN.aY] + y) > (Game.height - 10)) {os[0][LN.aY] = (Game.height - 10); hitWall = true;}
+    else {os[0][LN.aY] += y;}
+    os[0][LN.dY] = 1;
   }
+  else {os[0][LN.dY] = 0;}
+  //os[0][LN.dX] = actionClone[0]; // update agent direction
+  //os[0][LN.dY] = actionClone[1];
+  os[0][LN.sX] = actionClone[2]; // update agent speed in next_state
+  os[0][LN.sY] = actionClone[3];
 
-  os[0][2] = actionClone[2]; // update agent speed in next_state
-  os[0][3] = actionClone[3];
-
-  const mx = os[0][0];
-  const my = os[0][1];
+  const mx = os[0][LN.aX];
+  const my = os[0][LN.aY];
   //console.log(`mx: ${mx}, my: ${my}`);
   Game.agentMoves.push([mx, my]); // Fore drawing agent paths
-  if (agent.currentStep = 0 && (parseInt(UI.episodeSlider.value) > Game.maxDrawEpisodes)) {
-    Game.entities.splice(0, agent.batch_size);
-  }
+ // if (currentStep == 0 && (parseInt(UI.episodeSlider.value) > Game.maxDrawEpisodes)) {
+  //  Game.entities.splice(0, agent.batch_size);
+ // }
   //if (Game.agentMoves.length > (agent.batch_size * Game.maxDrawBatches))
 
   //animateAgent();
@@ -595,24 +610,43 @@ function envStep(action, state, n_steps) {
   let penalty = 0;
   //let zomDist = utilsAI.distance(os[0][0],os[0][1],os[0][2],os[0][3]);
  // let civDist = utilsAI.distance(os[0][0],os[0][1],os[0][2],os[0][3]); 
-  let civDist = utilsAI.distance(os[0][0], os[0][1], os[0][4], os[0][5]);
-  let civAngle = utilsAI.angle([os[0][0], os[0][1]], [os[0][4], os[0][5]]);
-  let agentHeading = utilsAI.angle([state[0][0], state[0][1]], [os[0][0],os[0][1]]);
-  let angleDegDif = Math.abs((civAngle * (180 / Math.PI)) - (agentHeading * (180 / Math.PI)));
+  let civDist = utilsAI.distance(os[0][LN.aX], os[0][LN.aY], os[0][LN.cX], os[0][LN.cY]);
+  let civAngle = utilsAI.angle([os[0][LN.aX], os[0][LN.aY]], [os[0][LN.cX], os[0][LN.cY]]);
+  let agentHeading = utilsAI.angle([state[0][LN.aX], state[0][LN.aY]], [os[0][LN.aX],os[0][LN.aY]]);
+  //let angleDegDif = Math.abs((civAngle * (180 / Math.PI)) - (agentHeading * (180 / Math.PI)));
+
+  function angleDifferenceRadians(angle1, angle2) {
+    let diff = Math.abs(angle1 - angle2);
+    return Math.min(diff, 2 * Math.PI - diff);
+}
+let angleRadDif = angleDifferenceRadians(civAngle, agentHeading);
+
   //let angleDeg1 = (civAngle + Math.PI) / (2 * Math.PI); // Normalize to [0, 1];
   //let angleDeg2 = (os[0][7] + Math.PI) / (2 * Math.PI);
+  //let angle1 = civAngle * (180 / Math.PI);
+  //let angle2 = agentHeading * (180 / Math.PI);
+  //console.log(`civAngle: ${civAngle}`);
+  //console.log(`agentHeading: ${agentHeading}`);
+  //console.log(`angle diff: ${angleRadDif}`);
   //let angleDegDif = Math.abs(angleDeg1 - angleDeg2);
    // let angleDegDif = Math.abs(civAngle - os[0][5]);
   //let angleDeg1 = civAngle * (180 / Math.PI);
   //let angleDeg2 = os[0][5] * (180 / Math.PI);
   //let angleDegDif = Math.abs(angleDeg1 - angleDeg2);
   //let angleRadDiff = angleDegDif * (Math.PI / 180);
-
+   //1rad × 180/π = 57.296°
+  //1° × π/180 = 0.01745rad
   // Assuming angleDegDif is in the range [0, 180]
-  let angleReward = 180 - angleDegDif; // Reward increases as angleDegDif approaches 0
+  //let angleReward = Math.abs(180 - angleRadDif); // Reward increases as angleDegDif approaches 0
   // Scale the angle reward if needed
-  let angleRewardScaling = 0.005; // Adjust as needed
+  //let angleRewardScaling = 0.003; // Adjust as needed 0.005
+ //angleReward *= angleRewardScaling;
+
+  let angleReward = angleRadDif; // Reward increases as angleDegDif approaches 0
+  // Scale the angle reward if needed
+  let angleRewardScaling = 0.2; // Adjust as needed 0.005
   angleReward *= angleRewardScaling;
+  
   //let angleReward = 0;
   // Penalty for significant changes in angle
   //let scaledAngleDegDif = angleDegDif * 100;
@@ -626,32 +660,31 @@ function envStep(action, state, n_steps) {
   else {angleReward += 0.5}
   */
   let distanceReward = 0;
-  let distanceBase = 1 / civDist; // Reward increases as the agent gets closer
+  let distanceBase = 1 / civDist; 
   // Scale the distance reward if needed
-  let distanceRewardScaling = 0.1; // Adjust as needed
+  let distanceRewardScaling = 30; // Adjust as needed 0.1 // set as penalty?
   distanceBase *= distanceRewardScaling;
-  distanceBase *= 100;
+  //distanceBase *= 100;
 
-  const stateDifX = Math.abs(state[0][0] - os[0][4]);
-  const stateDifY = Math.abs(state[0][1] - os[0][5]);
-  const n_stateDifX = Math.abs(os[0][0] - os[0][4]);
-  const n_stateDifY = Math.abs(os[0][1] - os[0][5]);
+  //const stateDifX = Math.abs(state[0][LN.aX] - os[0][LN.cX]); // agent x,y - civ x,y
+  //const stateDifY = Math.abs(state[0][LN.aY] - os[0][LN.cY]);
+  //const n_stateDifX = Math.abs(os[0][LN.aX] - os[0][LN.cX]);
+  //const n_stateDifY = Math.abs(os[0][LN.aY] - os[0][LN.cY]);
 
-  if (n_stateDifX < stateDifX) {distanceReward += 0.4}
-  else if (n_stateDifX > stateDifX) {penalty += 0.5}
-  if (n_stateDifY < stateDifY) {distanceReward += 0.4}
-  else if (n_stateDifY > stateDifY) {penalty += 0.5}
-  //if (civDist < os[0][6]) {distanceReward += 0.5}
-  //else if (civDist > os[0][6]) {penalty += 0.5}
-  //if (civDist > os[0][6]) {distanceReward -= (0.5 + distanceBase); }
-  //else if (civDist < os[0][6]) {distanceReward += (0.5 + distanceBase);}
+  //if (n_stateDifX < stateDifX) {distanceReward += 0.4}
+  //else if (n_stateDifX > stateDifX) {penalty += 0.5}
+  //if (n_stateDifY < stateDifY) {distanceReward += 0.4}
+  //else if (n_stateDifY > stateDifY) {penalty += 0.5}
 
-  // removed because I made a time penalty which should amount to the same behavior
-  //if ((actionClone[0] > -0.1 && actionClone[0] < 0.1) && (actionClone[1] > -0.1 && actionClone[1] < 0.1)) {penalty += 0.2}
- 
-  let totalReward = distanceReward + distanceBase + angleReward;
-  //  - (angleDegDif * 2)
-  reward += totalReward;
+  //if (civDist < os[0][LN.dist]) {distanceReward += 0.1}
+  //if (civDist > os[0][LN.dist]) {penalty += 1}
+  
+  //let totalReward = distanceReward + distanceBase + angleReward;
+  //let totalReward = distanceBase + angleReward;
+  
+  //reward += totalReward;
+  reward += distanceBase;
+  penalty += angleReward;
   /*
   //const minVal = 0; // having negative here allows a possitive reward can scale into a negative
   //const maxVal = 3;
@@ -667,45 +700,45 @@ function scaleZeroOne(x) {
 function scaleWithTanh(x) {
   return Math.tanh(x);
 }
-function calculateTimePenalty() {
+function calculateTimePenalty(step, maxSteps) {
   const maxPenalty = -0.1; // Adjust as needed
-  console.log(`step: ${agent.currentStep}`);
-  console.log(`max step: ${agent.maxStepCount}`);
-  const timeRatio = agent.currentStep / agent.maxStepCount;
-  const timePenalty = maxPenalty * timeRatio;
+  const timeRatio = step / maxSteps;
+  const timePenalty = Math.max(maxPenalty, maxPenalty * timeRatio);
   return timePenalty;
 }
   //reward -= angleDegDif;
   //console.log(`step: ${n_steps}, civ Dist: ${civDist}`);
-  console.log(`distanceReward: ${distanceReward}`);
-  console.log(`distanceBase: ${distanceBase}`);
+  //console.log(`distanceBase: ${distanceBase}`);
+  //console.log(`distanceReward: ${distanceReward}`);
   //console.log(`civAngle: ${civAngle}`);
   //console.log(`angleDeg 1: ${angleDeg1}`);
   //console.log(`angleDeg 2: ${angleDeg2}`);
   //console.log(`angleDegDif: ${angleDegDif}`);
- // console.log(`scaled angle dif: ${scaledAngleDegDif}`);
-  console.log(`angle Reward: ${angleReward}`);
+  //console.log(`scaled angle dif: ${scaledAngleDegDif}`);
+  //console.log(`angle Reward: ${angleReward}`);
   //console.log(`stability Reward: ${angleStabilityReward}`);
   //console.log(`total Reward: ${totalReward}`);
   //console.log(`angleRadDiff: ${angleRadDiff}`);
   //if((civAngle - state[0][3]) > 0.2 ) {reward += 0.5}
   //else {reward += 0.5}
-  os[0][6] = civDist;
-  os[0][7] = civAngle;
-  if (civDist <= player.width) {reward += 5; console.warn("AGENT FOUND CIVILIAN!");isDone = true;}
-  if (hitWall) {penalty += 1}
+  os[0][LN.dist] = civDist;
+  os[0][LN.angle] = civAngle;
+  //if (civDist <= (player.width * 10)) {reward += 0.1;}
+  //if (civDist <= (player.width * 7)) {reward += 0.2;}
+  //if (civDist <= (player.width * 4)) {reward += 0.3;}
+  //if (civDist <= (player.width * 5)) {reward += 1;}
+  if (civDist <= player.width) {reward += 50; console.warn("AGENT FOUND CIVILIAN!");isDone = true;}
+  if (hitWall) {penalty += 2}
   //const scaledReward = scaleZeroOne(reward);
   //const scaledPenalty = scaleZeroOne(penalty);
   //reward = scaledReward - scaledPenalty;
-  // Pseudocode for time-dependent penalty
 
-  //const currentStep = agent.currentStep; 
   //const maxSteps = agent.maxStepCount; 
-  const timePenalty = calculateTimePenalty();
+  const timePenalty = calculateTimePenalty(currentStep, agent.maxStepCount);
  // if (stepNumber % 3 === 0) {}
 
-  penalty += timePenalty; // pos or neg?
-  console.log(`penalty: ${penalty}`);
+  penalty += Math.abs(timePenalty);
+  //console.log(`penalty: ${penalty}`);
   reward = reward - penalty;
   //console.log(`pre-scaled reward: ${reward}`);
   //reward = scaleWithTanh(reward);
@@ -713,12 +746,10 @@ function calculateTimePenalty() {
   
   //reward = scaleToMinusOneToOne(reward, minVal, maxVal);
   //console.log(`scaled reward: ${scaledReward}`);
-  //console.log(`scaled penalty: ${scaledPenalty}`);
-  console.log(`time penalty: ${timePenalty}`);
-  
-  console.log(`reward: ${reward}`);
-  //1rad × 180/π = 57.296°
-  //1° × π/180 = 0.01745rad
+  //console.log(`time penalty: ${timePenalty}`);
+  //console.log(`final penalty: ${penalty}`);
+  //console.log(`final reward: ${reward}`);
+ 
   // Assuming angle is normalized between -1 and 1
 //let normalizedAngle = civAngle / maxPossibleAngleValue; 
 
@@ -750,7 +781,7 @@ function calculateTimePenalty() {
   //console.log(next_State);
   // Return the next state, reward, and whether the game is done
   //const nextState = getGameState(); // Implement this to return the game state
-  if (n_steps >= agent.maxStepCount) {isDone = true}
+  if (currentStep >= agent.maxStepCount) {isDone = true}
   return { next_state: next_State, reward: reward, isDone: isDone };
 }
 
@@ -781,13 +812,12 @@ function main(epNum,stepSize,batchSize,warmupSteps) {  // Removed async   //
     let totalReward = 0;
     let state = envReset(); // make sure is right shape!
     let done = false;
-    let n_steps = 0;
-    agent.currentStep = 0;
+    let currentStep = 0;
     let stepDone = false;
    
     while (!done) {
       if (!Game.running) {break}
-      //console.log(n_steps);
+      //console.log(currentStep);
       //console.log(state);
       //console.log(`State ${n_steps}: ${state}, shape: ${}`);
       const normalState = normalizeData(state);
@@ -799,7 +829,7 @@ function main(epNum,stepSize,batchSize,warmupSteps) {  // Removed async   //
       //console.log(action); // not a tensor, just array. [0,0] but why? for envStep?
       //console.log(`first state: ${state}`);
       // STEP 2a: step the environment with the action, returning the new state, rewards, and if done
-      const { next_state, reward, isDone } = envStep(action, state, n_steps);
+      const { next_state, reward, isDone } = envStep(action, state, currentStep);
       //console.log(`reward: ${reward}`)
       // remember to consider what happens with no training
       // STEP 3: save the new state to the memory buffer
@@ -822,10 +852,8 @@ function main(epNum,stepSize,batchSize,warmupSteps) {  // Removed async   //
       totalReward += reward;
       //console.log(`Reward: ${totalReward}`);
       
-      if (n_steps >= agent.maxStepCount) {stepDone = true} // forcing batch size episodes
-      n_steps++
-      agent.currentStep++;
-      
+      if (currentStep >= agent.maxStepCount) {stepDone = true} // forcing batch size episodes
+      currentStep++
 
       if (isDone || stepDone) {
         epReward.push(JSON.parse(JSON.stringify(totalReward)));
