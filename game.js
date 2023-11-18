@@ -16,15 +16,22 @@ const punishTextArea = document.getElementById("punishTextArea");
 
 let player, civ1;
 const UI = {
+    agentWins: document.getElementById("agentWins"),
     pathsCheckbox: document.getElementById("pathsCheckbox"),
     episodeSlider: document.getElementById("episodeRange"),
     stepSlider: document.getElementById("stepRange"),
     batchSlider: document.getElementById("batchRange"),
     warmupSlider: document.getElementById("warmupRange"),
+    randAgentCheckbox: document.getElementById("randAgentCheckbox"),
     aSliderX: document.getElementById("agentRangeX"),
     aSliderY: document.getElementById("agentRangeY"),
     cSliderX: document.getElementById("civRangeX"),
-    cSliderY: document.getElementById("civRangeY")
+    cSliderY: document.getElementById("civRangeY"),
+    aRangeInfoX:document.getElementById("aRangeInfoX"),
+    aRangeInfoY:document.getElementById("aRangeInfoY"),
+    cRangeInfoX:document.getElementById("cRangeInfoX"),
+    cRangeInfoY:document.getElementById("cRangeInfoY"),
+
 }
 
 const Game = {
@@ -33,7 +40,7 @@ const Game = {
     width: 600,
     height: 500,
     entities: [],
-    //player: {},
+    agentWins: 0,
     entityCounter: 0,
     rewards: 0,
     punishments: 0,
@@ -89,6 +96,7 @@ const Game = {
         if (this.user == "TD3") {
             player.user = "TD3";
             Game.agentMoves = [];
+            if (UI.randAgentCheckbox.checked) {this.loadAgent()}
             const episodes = UI.episodeSlider.value;
             const steps = UI.stepSlider.value;
             const batchSize = UI.batchSlider.value;
@@ -146,8 +154,30 @@ const Game = {
     loadPlayer: function() {
        // Game.entities.push(player = new Player(++Game.entityCounter,150,150,"human"));
     },
-    loadAgent: function() {
+    loadAgent: function() { 
        // Game.entities.push(player = new Player(++Game.entityCounter,150,150,"TD3"));
+        
+        let center = [civ1.x + (civ1.width/2), civ1.y + (civ1.height/2)];
+        
+        let agentLoc = this.getAgentSpawn(center)
+        player.x = agentLoc[0];
+        player.y = agentLoc[1];
+        Game.redrawInit();
+    },
+    getAgentSpawn: function(center) { // center is [x,y]
+        const radius = 100;
+        const fixedDistance = 50
+        let x,y;
+        do {
+            const angle = Math.random() * 2 * Math.PI; // Random angle in radians
+            const distance = fixedDistance + Math.random() *(radius - fixedDistance); // Random place along radius
+        
+            // Calculate the coordinates of the random point
+            x = center[0] + distance * Math.cos(angle);
+            y = center[1] + distance * Math.sin(angle);
+        } while (x < 10 || x >= Game.width || y < 10 || y >= Game.height);
+    
+        return [x, y];
     }
 } 
 
