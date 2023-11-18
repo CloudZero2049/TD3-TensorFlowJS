@@ -2,6 +2,9 @@
 //tidy() -->
 // const result = tf.scalar(121);
 // res1 = tf.keep(result.sqrt());
+
+// Episodes Until maximization: about 20-40x
+// High score: 49.86120644246673
 const utilsAI = {
   distance: function(x1,y1,x2,y2) {
     return Math.floor(Math.hypot(x2 - x1, y2 - y1));
@@ -34,7 +37,7 @@ const observationSpace ={
     const cSliderX = document.getElementById("civRangeX");
     const cSliderY = document.getElementById("civRangeY");
   
-    defs[0][0] = parseInt(aSliderX.value) + (player.width/2);
+    defs[0][0] = parseInt(aSliderX.value) + (player.width/2); // Do I need the centers here?
     defs[0][1] = parseInt(aSliderY.value) + (player.height/2);
     defs[0][6] = parseInt(cSliderX.value) + (civ1.width/2);
     defs[0][7] = parseInt(cSliderY.value) + (civ1.height/2);
@@ -486,11 +489,11 @@ return returnValue;
 
   
   }
-  // Method for saving the model
-  saveModel() {
+  
+  saveModel() { // const saveResults = await model.save('downloads://my-model-1');
 
   }
-  // Method for loading a model
+  
   loadModel() {
 
   }
@@ -532,13 +535,20 @@ function normalizeReward(reward, minRange = -1, maxRange = 1) {
 }
 
 function envReset() {
-  // Initialize or reset the game environment and entities
-
+  // reset the game environment and entities
+  // set random spawn
+  const os = observationSpace;
+  if (UI.randAgentCheckbox.checked) {
+    let center = [os.defaults[0][os.locNums.cX], os.defaults[0][os.locNums.cY]];
+    let agentLoc = Game.getAgentSpawn(center);
+    os.defaults[0][os.locNums.aX] = agentLoc[0];
+    os.defaults[0][os.locNums.aY] = agentLoc[1];
+  }
   // Reset the state space
-  observationSpace.stateSpace = JSON.parse(JSON.stringify(observationSpace.defaults));
-  observationSpace.next_stateSpace = JSON.parse(JSON.stringify(observationSpace.defaults));
+  os.stateSpace = JSON.parse(JSON.stringify(os.defaults));
+  os.next_stateSpace = JSON.parse(JSON.stringify(os.defaults));
   
-  const state = observationSpace.stateSpace;
+  const state = os.stateSpace;
   
   return state;
 }
@@ -563,12 +573,14 @@ function envStep(action, state, currentStep) {
     //locNums: {aX: 0,aY: 1,dx: 2,dY: 3,sX: 4,sY: 5,cX: 6,cY: 7,dist: 8, angle: 9,}
    //[agentX, agentY, directionX, directionY, speedX, speedY, civX, civY, distance, angle]
   // move X
-  if (actionClone[0] < -0.3) { // move left
+  const movementThreshold = 0.1;
+
+  if (actionClone[0] < -movementThreshold) { // move left
     if ((os[0][LN.aX] + x) < 10) {os[0][LN.aX] = 10; hitWall = true;}
     else {os[0][LN.aX] += x;}
     os[0][LN.dX] = -1;
   }
-  else if (actionClone[0] > 0.3) { // move right
+  else if (actionClone[0] > movementThreshold) { // move right
     if ((os[0][LN.aX] + x) > (Game.width - 10)) {os[0][LN.aX] = (Game.width - 10); hitWall = true;} // player width & height = 20. x,y is center
     else {os[0][LN.aX] += x;}
     os[0][LN.dX] = 1;
@@ -576,12 +588,12 @@ function envStep(action, state, currentStep) {
   else {os[0][LN.dX] = 0;} 
 
   // move Y
-  if (actionClone[1] < -0.3) { // move up
+  if (actionClone[1] < -movementThreshold) { // move up
     if ((os[0][LN.aY] + y) < 10) {os[0][LN.aY] = 10;  hitWall = true;}
     else {os[0][LN.aY] += y;}
     os[0][LN.dY] = -1;
   }
-  else if (actionClone[1] > 0.3) { // move down
+  else if (actionClone[1] > movementThreshold) { // move down
     if ((os[0][LN.aY] + y) > (Game.height - 10)) {os[0][LN.aY] = (Game.height - 10); hitWall = true;}
     else {os[0][LN.aY] += y;}
     os[0][LN.dY] = 1;
@@ -619,7 +631,7 @@ function envStep(action, state, currentStep) {
     let diff = Math.abs(angle1 - angle2);
     return Math.min(diff, 2 * Math.PI - diff);
 }
-let angleRadDif = angleDifferenceRadians(civAngle, agentHeading);
+let angleRadDif = angleDifferenceRadians(civAngle, agentHeading); // angleRadDif < ? or 0 + reward
 
   //let angleDeg1 = (civAngle + Math.PI) / (2 * Math.PI); // Normalize to [0, 1];
   //let angleDeg2 = (os[0][7] + Math.PI) / (2 * Math.PI);
@@ -642,10 +654,10 @@ let angleRadDif = angleDifferenceRadians(civAngle, agentHeading);
   //let angleRewardScaling = 0.003; // Adjust as needed 0.005
  //angleReward *= angleRewardScaling;
 
-  let angleReward = angleRadDif; // Reward increases as angleDegDif approaches 0
+  let anglePenalty = angleRadDif; // Reward increases as angleDegDif approaches 0
   // Scale the angle reward if needed
-  let angleRewardScaling = 0.2; // Adjust as needed 0.005
-  angleReward *= angleRewardScaling;
+  let anglePenaltyScaling = 0.2; // Adjust as needed 0.005
+  anglePenalty *= anglePenaltyScaling;
   
   //let angleReward = 0;
   // Penalty for significant changes in angle
@@ -659,11 +671,12 @@ let angleRadDif = angleDifferenceRadians(civAngle, agentHeading);
   else if (angleDegDif > 0.5) {angleReward += 0.3}
   else {angleReward += 0.5}
   */
-  let distanceReward = 0;
-  let distanceBase = 1 / civDist; 
+  //let distanceReward = 0;
+  //let distanceReward = 1 / civDist; // this one is for rewards
+  let distancePenalty = civDist; 
   // Scale the distance reward if needed
-  let distanceRewardScaling = 30; // Adjust as needed 0.1 // set as penalty?
-  distanceBase *= distanceRewardScaling;
+  let distancePenaltyScaling = 0.001; // Adjust as needed 0.1 // set as penalty?
+  distancePenalty *= distancePenaltyScaling;
   //distanceBase *= 100;
 
   //const stateDifX = Math.abs(state[0][LN.aX] - os[0][LN.cX]); // agent x,y - civ x,y
@@ -683,8 +696,8 @@ let angleRadDif = angleDifferenceRadians(civAngle, agentHeading);
   //let totalReward = distanceBase + angleReward;
   
   //reward += totalReward;
-  reward += distanceBase;
-  penalty += angleReward;
+  //reward += distancePenalty;
+  penalty += anglePenalty + distancePenalty;
   /*
   //const minVal = 0; // having negative here allows a possitive reward can scale into a negative
   //const maxVal = 3;
@@ -709,13 +722,13 @@ function calculateTimePenalty(step, maxSteps) {
   //reward -= angleDegDif;
   //console.log(`step: ${n_steps}, civ Dist: ${civDist}`);
   //console.log(`distanceBase: ${distanceBase}`);
-  //console.log(`distanceReward: ${distanceReward}`);
+  console.log(`Distance Penalty: ${distancePenalty}`);
   //console.log(`civAngle: ${civAngle}`);
   //console.log(`angleDeg 1: ${angleDeg1}`);
   //console.log(`angleDeg 2: ${angleDeg2}`);
   //console.log(`angleDegDif: ${angleDegDif}`);
   //console.log(`scaled angle dif: ${scaledAngleDegDif}`);
-  //console.log(`angle Reward: ${angleReward}`);
+  console.log(`Angle Penalty: ${anglePenalty}`);
   //console.log(`stability Reward: ${angleStabilityReward}`);
   //console.log(`total Reward: ${totalReward}`);
   //console.log(`angleRadDiff: ${angleRadDiff}`);
@@ -727,7 +740,12 @@ function calculateTimePenalty(step, maxSteps) {
   //if (civDist <= (player.width * 7)) {reward += 0.2;}
   //if (civDist <= (player.width * 4)) {reward += 0.3;}
   //if (civDist <= (player.width * 5)) {reward += 1;}
-  if (civDist <= player.width) {reward += 50; console.warn("AGENT FOUND CIVILIAN!");isDone = true;}
+  if (civDist <= player.width) {
+    reward += 50; console.warn("AGENT FOUND CIVILIAN!");
+    Game.agentWins++;
+    UI.agentWins.innerHTML = `Times Won: ${Game.agentWins}`;
+    isDone = true;
+  }
   if (hitWall) {penalty += 2}
   //const scaledReward = scaleZeroOne(reward);
   //const scaledPenalty = scaleZeroOne(penalty);
@@ -746,9 +764,9 @@ function calculateTimePenalty(step, maxSteps) {
   
   //reward = scaleToMinusOneToOne(reward, minVal, maxVal);
   //console.log(`scaled reward: ${scaledReward}`);
-  //console.log(`time penalty: ${timePenalty}`);
-  //console.log(`final penalty: ${penalty}`);
-  //console.log(`final reward: ${reward}`);
+  console.log(`time penalty: ${timePenalty}`);
+  console.log(`final penalty: ${penalty}`);
+  console.log(`final reward: ${reward}`);
  
   // Assuming angle is normalized between -1 and 1
 //let normalizedAngle = civAngle / maxPossibleAngleValue; 
@@ -826,7 +844,7 @@ function main(epNum,stepSize,batchSize,warmupSteps) {  // Removed async   //
       // STEP 1a: get an action based on the current state 
       const action = agent.act(normalState); // choose_action(observation), is envReset(). // video 2 adds more noise to the action
       //console.log(state[0][6]);
-      //console.log(action); // not a tensor, just array. [0,0] but why? for envStep?
+      //console.log(action); // not a tensor, just array. [0,0,0,0]
       //console.log(`first state: ${state}`);
       // STEP 2a: step the environment with the action, returning the new state, rewards, and if done
       const { next_state, reward, isDone } = envStep(action, state, currentStep);
