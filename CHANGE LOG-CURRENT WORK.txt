@@ -1,8 +1,12 @@
 [CURENT WORK]
 
-1) I've been researching and fine tuning the reward system to try and get some real results from training the agent.
+1) Good news! It can be said that the agent is officially learning! After running random agent spawns in a radius around the civilian, it only took about 200 episodes to find the civilian basically every time. Furethermore, when moving the civilian spawn afterwards, the agent quickly begins learning to re-converge on the new location (this would be a step 2 phase after initialy training the agent to go towards the civilian in the first place).
 
-2) I still need final verification on the full setup of the program to ensure there's no loose ends (very dificult without help as I am just learning). At least it appears to be mostly working as expected.
+1) I've been researching and fine tuning the reward system to try and get some real results from training the agent. It looks like it's going well.
+
+2) Will be working on save/load model soon.
+
+3) I still need final verification on the full setup of the program to ensure there's no loose ends (very dificult without help as I am just learning). At least it appears to be working as expected.
 
 [CHANGE LOG]
 
@@ -141,6 +145,14 @@
 
 4) turned the angle reward mechanic into a penalty.
 
-5) changed movement threshold back to 0.3 to help prevent sticking right angles.
+5) changed movement threshold to 0.1. I'm trying to help prevent sticking right angles. x
 
 6) agent alpha learning rate lowered to 0.0001. (may have worked well, keeping for now).
+
+[11/16/23]
+
+1) setup a random spawn mechanic for the player (within a fixed radius of civilian). The idea is to train to to find the civilian from any starting angle.
+
+2) Agent Wins are now shown on canvas.
+
+! FineTune agent location when random
