@@ -89,6 +89,7 @@ canvas {position: absolute;
 <div id="infoDiv">
     <p id="rewardTextArea">Rewards:</p>
     <p id="punishTextArea">punishments:</p>
+    <p id="agentWins">Times Won: 0</p>
 
 <div id="buttonsDiv">
     <button id="startPlayerButton" onclick="Game.start(`player`);" disabled="true">Start Player</button>
@@ -103,14 +104,17 @@ canvas {position: absolute;
     <input type="range" min="1" max="1000" value="5" class="slider" id="episodeRange">
     <label for="episodeRange" id="episodeInfo">Episodes: 5</label></br>
   
-    <input type="range" min="1" max="1000" value="64" class="slider" id="stepRange">
+    <input type="range" min="1" max="500" value="64" class="slider" id="stepRange">
     <label for="stepRange" id="stepInfo">Steps: 64</label></br>
 
-    <input type="range" min="1" max="500" value="64" class="slider" id="batchRange">
+    <input type="range" min="1" max="200" value="64" class="slider" id="batchRange">
     <label for="batchRange" id="batchInfo">Batch Size: 64</label></br>
 
     <input type="range" min="1" max="1000" value="64" class="slider" id="warmupRange">
     <label for="warmupRange" id="warmupInfo">Warmup Steps: 64</label></br></br>
+
+    <input type="checkbox" id="randAgentCheckbox" name="randAgentCheckbox" />
+    <label for="randAgentCheckbox">Random Agent Location?</label></br>
 
     <input type="range" min="10" max="570" value="150" class="slider" id="agentRangeX">
     <label for="agentRangeX" id="aRangeInfoX">Agent Start X: 150</label></br>
@@ -179,6 +183,21 @@ canvas {position: absolute;
     }
     UI.warmupSlider.oninput = function() {
       warmupOutput.innerHTML = `Warmup Steps: ${this.value}`;
+    }
+    UI.randAgentCheckbox.oninput = function() {
+      if (randAgentCheckbox.checked) {
+        UI.aSliderX.hidden = true;
+        UI.aSliderY.hidden = true;
+        UI.aRangeInfoX.hidden = true;
+        UI.aRangeInfoY.hidden = true;
+        
+      }
+      else {
+        UI.aSliderX.hidden = false;
+        UI.aSliderY.hidden = false;
+        UI.aRangeInfoX.hidden = false;
+        UI.aRangeInfoY.hidden = false;
+      }
     }
     UI.aSliderX.oninput = function() {
       let x = parseInt(this.value) + player.width / 2;
