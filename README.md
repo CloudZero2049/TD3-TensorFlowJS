@@ -8,7 +8,7 @@
 
 	2b) The Observation Space has 8 array locations representing the x,y coordinates of the agent and civilian, the agents movement speed (both on x and y), the distance of the agent from the civillian, and angle of agent to civilian. [[ax, ay, asx, asy, civx, civy, civ-distance, civ-angle]]. I've temporarily removed x,y coords of zombie until it is actualy used.
 
-	2c) Agent gets a positive reward for moving towards (and touching) the civilian, and a negative reward for moving away from civilian.
+	2c) Agent gets a dynamic penalty that shrinks or grows depending on how close it is to the civilian, the difference in angle between it's current angle to the civilian and the same from the previous step (this is done to prevent positive point exploitation). It also get's a penalty for hitting walls. It's only actual reward (positive) is when it reaches the civilian.
 
 	2d) Actual canvas animation is currently disabled when running TD3. Currently there is a visual representation that shows the paths the agent took. A "start player" button has been included that will animate while a human moves the player with WASD keys. The 0 key will stop animation (good for looping errors), and the 9 key will start it.
 
