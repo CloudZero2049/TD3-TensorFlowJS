@@ -1,12 +1,12 @@
 [CURENT WORK]
 
-1) Good news! It can be said that the agent is officially learning! After running random agent spawns in a radius around the civilian, it only took about 200 episodes to find the civilian basically every time. Furethermore, when moving the civilian spawn afterwards, the agent quickly begins learning to re-converge on the new location (this would be a step 2 phase after initialy training the agent to go towards the civilian in the first place).
+1) Good news! It can be said that the agent is officially learning! After running random agent spawns in a radius around the civilian, on my first trial run it only took about 200 episodes to find the civilian basically every time. Furethermore, when moving the civilian spawn afterwards, the agent quickly begins learning to re-converge on the new location (this would be a step 2 phase after initialy training the agent to go towards the civilian in the first place).
 
 1) I've been researching and fine tuning the reward system to try and get some real results from training the agent. It looks like it's going well.
 
-2) Will be working on save/load model soon.
+2) currently working on save/load methods for models and memory. May take awhile to update on GitHub.
 
-3) I still need final verification on the full setup of the program to ensure there's no loose ends (very dificult without help as I am just learning). At least it appears to be working as expected.
+3) I still would like final verification on the full setup of the program to ensure there's no loose ends (very dificult without help). At least it appears to be working as expected.
 
 [CHANGE LOG]
 
@@ -155,4 +155,18 @@
 
 2) Agent Wins are now shown on canvas.
 
-! FineTune agent location when random
+[11/17/23]
+
+1) Created a system to download and load memory buffers (cnt, maxsize, state_memory, next_state_memory, action_memory, reward_memory, done_memory)
+
+[11/19/23]
+
+1) Added a version number to Game object (game.js). Right now it is primarily to check uploaded model compatibility.
+
+2) removed "rewards" and "punishments" text.
+
+3) added a "terminalFlag" to agent moves for drawing.
+
+4) fixed alpha transparency on drawn agent paths.
+
+is leakyRelu better than Relu?
