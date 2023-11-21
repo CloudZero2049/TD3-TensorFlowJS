@@ -1,1 +1,4 @@
-info
+version: 0.001
+
+These models were trained using random agent spawns for around 100 episodes. Inlcudes memory file.
+The civilian was located roughly in the center of the canvas (I only moved the x-axis spawn);
