@@ -31,6 +31,12 @@ canvas {position: absolute;
             left: 700px;
             z-index: 3;
         }
+span {
+  display:inline-block;
+  margin-right:15px;
+}
+
+
 #buttonsDiv {position: relative;
     top: 0px;
     left: 0px;
@@ -87,15 +93,15 @@ canvas {position: absolute;
 </div>
 
 <div id="infoDiv">
-    <p id="rewardTextArea">Rewards:</p>
-    <p id="punishTextArea">punishments:</p>
-    <p id="agentWins">Times Won: 0</p>
+  <!--<span id="rewardTextArea" style="color:red">Rewards: 0</span>
+  <span id="punishTextArea" style="color:blue">penalties: 0</span>
+-->
+  <span id="agentWins" style="color:rgb(229, 194, 0)">Times Won: 0</span>
+  </br>
 
 <div id="buttonsDiv">
     <button id="startPlayerButton" onclick="Game.start(`player`);" disabled="true">Start Player</button>
     <button id="startTD3Button" onclick="Game.start(`TD3`);" disabled="true">Start TD3 AI</button>
-    <!-- <button id="classButton" onclick="classify()" disabled="true">Classify</button> -->
-    <!--  <button id="saveModelButton" onclick="saveModel()" disabled="true">Save Model</button> -->
     <input type="checkbox" id="pathsCheckbox" name="pathsCheckbox" />
     <label for="pathsCheckbox">Keep Agent Paths?</label>
     
@@ -130,8 +136,30 @@ canvas {position: absolute;
     
     
   </div>
- <p><color="red"><font color="red">You can use left and right arrows after clicking a slider for fine tuning</font></p>
+ <p style="color:red">You can use left and right arrows after clicking a slider for fine tuning</p>
+
+ <div id="saveLoadDiv">
+  <p>Select memory file to load</p>
+  <input type="file" id="memoryInput" accept=".json" />
+  <button id="downloadMemoryButton" onclick="agent.downloadMemory();" disabled="true">Download Memory</button></br>
+  <p>Select all model files to load (2 per model, .json and .weights.bin)</p>
+  <input type="file" id="modelsInput" multiple="true" accept=".json, .bin" />
+  <button id="downloadActorButton" onclick="agent.downloadActorModel();" disabled="true">Download Main Actor Model</button>
+  <button id="downloadModelsButton" onclick="agent.downloadModels();" disabled="true">Download all Models (6 total, 12 files)</button>
+  <p style="color:rgb(10, 218, 10)" id="modelsLoadedInfo">Models Loaded: </p>
+  
+  
 </div>
+</div>
+<!--
+await agent.actor_main.save('downloads://actor_main-model');
+      await agent.actor_target.save('downloads://actor_target-model');
+      await agent.critic_main.save('downloads://critic_main-model');
+      await agent.critic_target.save('downloads://critic_target-model');
+      await agent.critic_main2.save('downloads://critic_main2-model');
+      await agent.critic_target2.save('downloads://critic_target2-model');
+
+-->
 <script src="utils.js"> </script>
 <script src="Classes.js"> </script>
 <script src="game.js"></script>
@@ -223,7 +251,41 @@ canvas {position: absolute;
       civ1.y = parseInt(this.value);
       Game.redrawInit();
     }
-
+    const memoryInput = document.getElementById('memoryInput');
+    memoryInput.addEventListener('change', checkMemory);
+    function checkMemory() {
+      const file = memoryInput.files[0]; // need Check for proper file info
+      if (file){
+        if (file.type !== `application/json`) {
+          throw "Memory file is not valid type. Expected JSON";
+          return
+        }
+        agent.loadMemory(file)
+      }
+    }
+    const modelsInput = document.getElementById('modelsInput');
+    modelsInput.addEventListener('change', checkModel);
+    function checkModel() {
+      try {
+        const file1 = modelsInput.files[0];
+        const file2 = modelsInput.files[1];
+        
+        if (file1 && file2){
+          for (i=0; i < modelsInput.files.length; i++) {
+            if ((modelsInput.files[i].type !== `application/octet-stream`) && (modelsInput.files[i].type !== `application/json`)) {
+              throw "A model file is wrong type. Expected JSON or octet-stream (.bin)";
+              return
+            }
+          }
+          
+          agent.loadModels(modelsInput.files);
+        }
+        else {throw "Minimum 2 files required: JSON and .bin"}
+      } catch (error) {
+        console.log(`Unable to load files: ${error}`)
+      }
+    }
+    
 
 </script>
 </body>
