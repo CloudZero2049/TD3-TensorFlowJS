@@ -1,8 +1,11 @@
-1) Web Console Log info: 
-	(TD3script.js)
-	1a) A notice after each step saying the reward and average reward.
-	1b) A console.warn apears when the agent reaches the civilian.
-	(game.js)
+ Web Console Log info: 
+(TD3script.js)
 
-	2a) Running tf.memory() to track number of tensors (track memory leaks).
-	2b) A notice saying "TD3 Complete" when it runs all the way through without errors.
+1a) A notice after each step saying the reward and average reward.
+1b) A console.warn apears when the agent reaches the civilian.
+1c) Custom try/catch errors for loading model and memory data.
+(game.js)
+
+2a) Running tf.memory() to track number of tensors (track memory leaks).
+2b) A notice saying "TD3 Complete" when it runs all the way through without errors.
+2c) Custom try/catch errors for loading model and memory data.	
