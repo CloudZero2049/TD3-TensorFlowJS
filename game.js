@@ -27,14 +27,20 @@ const UI = {
     aSliderY: document.getElementById("agentRangeY"),
     cSliderX: document.getElementById("civRangeX"),
     cSliderY: document.getElementById("civRangeY"),
-    aRangeInfoX:document.getElementById("aRangeInfoX"),
-    aRangeInfoY:document.getElementById("aRangeInfoY"),
-    cRangeInfoX:document.getElementById("cRangeInfoX"),
-    cRangeInfoY:document.getElementById("cRangeInfoY"),
-
+    aRangeInfoX: document.getElementById("aRangeInfoX"),
+    aRangeInfoY: document.getElementById("aRangeInfoY"),
+    cRangeInfoX: document.getElementById("cRangeInfoX"),
+    cRangeInfoY: document.getElementById("cRangeInfoY"),
+    downloadMemoryButton: document.getElementById("downloadMemoryButton"),
+    downloadActorButton: document.getElementById("downloadActorButton"),
+    downloadModelsButton: document.getElementById("downloadModelsButton"),
+    modelsInput: document.getElementById("modelsInput"),
+    modelsLoadedInfo: document.getElementById("modelsLoadedInfo"),
+    
 }
 
 const Game = {
+    version: 0.001,
     running: false, 
     user: "TD3",
     width: 600,
@@ -49,7 +55,7 @@ const Game = {
     init: function() {
         this.drawBG();
         loadEnts();
-        this.updateRewardtext();
+        //this.updateRewardtext();
         for (let i = this.entities.length -1; i >= 0; i--) {
             if (!this.entities[i]) {continue}
             this.entities[i].draw();
@@ -96,6 +102,7 @@ const Game = {
         if (this.user == "TD3") {
             player.user = "TD3";
             Game.agentMoves = [];
+            UI.modelsInput.disabled = true;
             if (UI.randAgentCheckbox.checked) {this.loadAgent()}
             const episodes = UI.episodeSlider.value;
             const steps = UI.stepSlider.value;
@@ -111,6 +118,9 @@ const Game = {
             UI.aSliderY.disabled = false;
             UI.cSliderX.disabled = false;
             UI.cSliderY.disabled = false;
+            UI.downloadMemoryButton.disabled = false;
+            UI.downloadActorButton.disabled = false;
+            UI.downloadModelsButton.disabled = false;
         }
         else if(this.user == "player") {
             player.user = "human";
@@ -139,8 +149,8 @@ const Game = {
         ctxBG.fillRect(0,0,bgCanvas.width,bgCanvas.height);
     },
     updateRewardtext: function() {
-        rewardTextArea.innerHTML = `Rewards: ${this.rewards}`;
-        punishTextArea.innerHTML = `Punishments: ${this.punishments}`;
+        //rewardTextArea.innerHTML = `Rewards: ${this.rewards}`;
+       // punishTextArea.innerHTML = `Punishments: ${this.punishments}`;
     },
     redrawInit: function() {
         let ents = Game.entities;
@@ -222,22 +232,39 @@ function animateAgent() {
     if (!UI.pathsCheckbox.checked) {Game.drawBG();}
     ctx.clearRect(player.x-1,player.y-1,player.width+2,player.height+2);
     let c1 = 0;
-    let c2 = 0;
     let start = 0;
+    let startFlagged = false;
     let max = agent.batch_size * 15;
+    let alpha = 0.2;
+    let alphaCount = 0;
+    let alphaMult = 1;                                    
+    let alphaBase = Math.floor(agent.maxStepCount / 9); // 7, 14, 21, 28 , 35 , 42 , 49 , 56+ (*9, 1.0 alpha)
+
     if (Game.agentMoves.length > max) {
         start = Game.agentMoves.length - max;
     }
      
    for (let i = start; i < Game.agentMoves.length; i++) {
-    let moveX = (Game.agentMoves[i][0]) - (player.width / 2); // getting corner for drawing
-    let moveY = (Game.agentMoves[i][1]) - (player.height / 2);
+    let moveX = (Game.agentMoves[i][0]);
+    let moveY = (Game.agentMoves[i][1]);
+    let terminalFlag = (Game.agentMoves[i][2]);
+   
+
     //console.log(`moveX: ${moveX}, moveY: ${moveY }`);
     //let r = Math.floor(Math.random() * (255 + 1))
     //let g = Math.floor(Math.random() * (255 + 1))
     //let b = Math.floor(Math.random() * (255 + 1))
-    let r,g,b,a;
-    
+    let r,g,b;
+    if (startFlagged) {
+        c1++;
+        alpha = 0.2;
+        alphaCount = 0;
+        alphaMult = 1;
+        startFlagged = false;
+    }
+   
+    if (c1 > 5) {c1 = 0}
+
     switch(c1){
         case 0: r = 255; g = 0; b = 0 // red
         break;
@@ -252,29 +279,26 @@ function animateAgent() {
         case 5: r = 0; g = 255; b = 255 // cyan
         break; 
       }
-      a = 0.5;
-      let aCutoff = (Game.agentMoves.length / 2) // 01234 56789 // adding transparency to the dots
-      if (i > aCutoff) {
-        let cutFifth = aCutoff / 5;
-        let b = 0;
-        for (let j = 1; j < 5; j++) {
-            b = i > (aCutoff + (cutFifth * j)) ? (0.1 * j) : 0;
-        }
-        a += b;
-      }
       
+    // adding transparency to the dots
+    if ((alphaMult < 9) && (alphaCount > alphaBase * alphaMult)) { // 1:.2, 2:.3, 3:.4, 4:.5, 5:.6, 6:.7, 7:.8, 8:.9, 9:1.0,
+        alpha += 0.1;
+        alphaMult++
+    }
+     // if (alphaCount > (alphaBase * alphaMult)) {alpha += 0.2;}
+     // if (alphaCount > (alphaBase * 3)) {alpha += 0.2;}
+     // if (alphaCount > (alphaBase * 4)) {alpha += 0.2;}
       
-      
-    let rgba = `rgba(${r},${g},${b},${a})`;
-    c2++
-    if (c2 > agent.maxStepCount) {c1++; c2 = 0;}
-    if (c1 > 5) {c1 = 0}
+    let rgba = `rgba(${r},${g},${b},${alpha})`;
+   
+    alphaCount++
 
     ctxBG.beginPath();
     ctxBG.arc(moveX, moveY, 2, 0, 2 * Math.PI);
     ctxBG.fillStyle = rgba;
     ctxBG.fill();
 
+    if (terminalFlag) {startFlagged = true}
    }
 
     player.x = (Game.agentMoves[Game.agentMoves.length -1][0]) - (player.width / 2);  // getting the top left corner
