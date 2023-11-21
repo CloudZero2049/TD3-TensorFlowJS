@@ -1,5 +1,5 @@
 # TD3-TensorFlowJS
-1) This is a passion project and is a work in progress, by a single person, and therefore may not work as expected. Also, expect a lot of comment code.
+1) This is a passion project and is a work in progress, by a single person, and therefore may not work as expected. It is currently in development using the Google Chrome web browser, other browser might not work (I haven't tested any). Check the "saved model data" folder for pre-trained models.
 
 2) I am creating this for the community, and therefore am hereby allowing anyone and everyone to use the code and information within for whatever (legal) purpose they desire (I'm using MIT License). I only ask that you give me / this repository (CloudZero2049) a shout-out if used in a project that is viewable to the community so that others can find it as well.
 
