@@ -184,7 +184,7 @@ class Actor {
     // if action bounds not +-1 can multiply here
     //const normalState = normalizeData(stateTensor);
     const pred = this.model.predict(stateTensor);
-    //console.log(`x: ${x}`);
+    //console.log(`pred: ${pred}`);
     return pred;
    
   }
@@ -204,6 +204,7 @@ class Agent {
     this.critic_main2 = new Critic(inputShapeC);
     this.critic_target = new Critic(inputShapeC);
     this.critic_target2 = new Critic(inputShapeC);
+    this.loadedFiles = [];
     this.batch_size = 64;
     this.n_actions = n_actions;
     this.a_opt = tf.train.adam(alpha);
@@ -220,12 +221,13 @@ class Agent {
     this.max_action = actionSpace.high[0];  // positive movement
 
     //video sets noise here. and update_network_parameters(tau=1)
-    this.critic_main.model.compile({optimizer: this.c_opt1, loss: tf.losses.meanSquaredError}); // , loss: tf.losses.meanSquaredError
-    this.critic_main2.model.compile({optimizer: this.c_opt2, loss: tf.losses.meanSquaredError}); 
     this.actor_main.model.compile({optimizer: this.a_opt, loss: tf.losses.meanSquaredError}); 
-    this.critic_target.model.compile({optimizer: this.c_opt1, loss: tf.losses.meanSquaredError});
-    this.critic_target2.model.compile({optimizer: this.c_opt2, loss: tf.losses.meanSquaredError}); 
     this.actor_target.model.compile({optimizer: this.a_opt, loss: tf.losses.meanSquaredError}); 
+    this.critic_main.model.compile({optimizer: this.c_opt1, loss: tf.losses.meanSquaredError});
+    this.critic_target.model.compile({optimizer: this.c_opt1, loss: tf.losses.meanSquaredError});
+    this.critic_main2.model.compile({optimizer: this.c_opt2, loss: tf.losses.meanSquaredError}); 
+    this.critic_target2.model.compile({optimizer: this.c_opt2, loss: tf.losses.meanSquaredError}); 
+    
     
     //this.actor_target.model.compile({ optimizer: this.a_opt,loss: tf.losses.meanSquaredError,metrics: ['mse'], }); 
     this.updateTarget(1); // tau = 1 for first update to cause a hard update. target networks gets set to main networks
@@ -254,7 +256,9 @@ class Agent {
   // STEP 1b: get actions from actor_main
   let actions = this.actor_main.call(stateTensor);
   //let reshapedActions = tf.reshape(tf.clone(actions),[2]);
-  //console.log(`Actor actions: ${actions}, with shape: ${actions.shape}`); 
+  //if (!actions.shape) {actions = tf.reshape(actions,[1,4]);}
+  //console.log(`Actor actions: ${actions}, with shape: ${actions.shape}`);
+  //console.log(actions);
   //console.log(`reshapedActions: ${reshapedActions}, with shape: ${reshapedActions.shape}`); 
   if (!evaluate) { // meaning it is training
     const noise = tf.randomNormal(actions.shape, 0.0, 0.1); // video uses mu, adds noise. need more noise?
@@ -486,36 +490,266 @@ return returnValue;
     }
     this.updateTarget();
   }); // End Tidy
-
-  
   }
   
-  saveModel() { // const saveResults = await model.save('downloads://my-model-1');
+  async downloadModels() { // await model.save('localstorage://demo/management/model1');
+    try {
+      await agent.actor_main.model.save('downloads://actor_main-model');
+      await agent.actor_target.model.save('downloads://actor_target-model');
+      await agent.critic_main.model.save('downloads://critic_main-model');
+      await agent.critic_target.model.save('downloads://critic_target-model');
+      await agent.critic_main2.model.save('downloads://critic_main2-model');
+      await agent.critic_target2.model.save('downloads://critic_target2-model');
+      
+      } catch (error) {
+        console.error(`Error downloading models: ${error}`);
+      }
+  }
+  async downloadActorModel() {
+    try {
+    await agent.actor_main.model.save('downloads://actor_main-model');
+    
+    } catch (error) {
+      console.error(`Error downloading actor model: ${error}`);
+    }
 
+
+    
+  }
+  async downloadMemory() {
+    try{
+      const memoryData = {
+      version: Game.version,
+      cnt: agent.memory.cnt, // integer
+      maxsize: agent.memory.maxsize,  // integer
+      state_memory: agent.memory.state_memory,  // tensor // .arraySync()
+      next_state_memory: agent.memory.next_state_memory, // tensor
+      action_memory: agent.memory.action_memory, // tensor
+      reward_memory: agent.memory.reward_memory, // tensor
+      done_memory: agent.memory.done_memory // tensor
+      }
+      // Step 1: Convert the array to a suitable format (e.g., JSON)
+      const serializedData = JSON.stringify(memoryData);
+
+      // Step 2: Create a Blob
+      const blob = new Blob([serializedData], { type: 'application/json' });
+
+      // Step 3: Create an object URL
+      const objectURL = URL.createObjectURL(blob);
+
+      // Step 4: Create an anchor element
+      const a = document.createElement('a');
+      a.href = objectURL;
+      a.download = 'memory_data.json'; // Set the desired filename
+
+      // Step 5: Simulate a click to trigger the download
+      a.click();
+      // Optionally, revoke the object URL after the download is initiated
+      URL.revokeObjectURL(objectURL);
+    } catch (error) {
+      console.error(`Failed to save Memory: ${error}`);
+    }
+  }
+  async loadModels(modelFiles) {
+    console.log(`Loading Files...`);
+    
+    try {
+    for (let i=0; i < modelFiles.length; i++) {
+      let name = modelFiles[i].name;
+      switch(name){
+        case "actor_main-model.json": {
+            let weights;
+            for (let j=0; j < modelFiles.length; j++) {
+              if (modelFiles[j].name === "actor_main-model.weights.bin") {
+                weights = modelFiles[j];
+              }
+            } // end j loop
+            if (weights) {
+              agent.actor_main.model = await tf.loadLayersModel(tf.io.browserFiles(
+                [modelFiles[i], weights]));
+                agent.actor_main.model.compile({optimizer: agent.a_opt, loss: tf.losses.meanSquaredError}); 
+              console.log(`Loaded actor_main model`);
+              const index = agent.loadedFiles.indexOf('actor_main');
+              if (index !== -1) {agent.loadedFiles.splice(index, 1);}
+              
+              agent.loadedFiles.push(`actor_main`);
+            }
+            else {throw`actor_main weights file not found`}
+          }
+        break;
+        case "actor_target-model.json": {
+          let weights;
+          for (let j=0; j < modelFiles.length; j++) {
+            if (modelFiles[j].name === "actor_target-model.weights.bin") {
+              weights = modelFiles[j];
+            }
+          } // end j loop
+          if (weights) {
+            agent.actor_target.model = await tf.loadLayersModel(tf.io.browserFiles(
+              [modelFiles[i], weights]));
+            agent.actor_target.model.compile({optimizer: agent.a_opt, loss: tf.losses.meanSquaredError});
+            console.log(`Loaded actor_target model`);
+            const index = agent.loadedFiles.indexOf('actor_target');
+            if (index !== -1) {agent.loadedFiles.splice(index, 1);}
+            agent.loadedFiles.push(`actor_target`);
+          }
+          else {throw`actor_target weights file not found`}
+        }
+        break; 
+        case "critic_main-model.json": {
+          let weights;
+          for (let j=0; j < modelFiles.length; j++) {
+            if (modelFiles[j].name === "critic_main-model.weights.bin") {
+              weights = modelFiles[j];
+            }
+          } // end j loop
+          if (weights) {
+            agent.critic_main.model = await tf.loadLayersModel(tf.io.browserFiles(
+              [modelFiles[i], weights]));
+            agent.critic_main.model.compile({optimizer: agent.c_opt1, loss: tf.losses.meanSquaredError});
+            console.log(`Loaded critic_main model`);
+            const index = agent.loadedFiles.indexOf('critic_main');
+            if (index !== -1) {agent.loadedFiles.splice(index, 1);}
+            agent.loadedFiles.push(`critic_main`);
+          }
+          else {throw`critic_main weights file not found`}
+        }
+        break;  
+        case "critic_target-model.json": {
+          let weights;
+          for (let j=0; j < modelFiles.length; j++) {
+            if (modelFiles[j].name === "critic_target-model.weights.bin") {
+              weights = modelFiles[j];
+            }
+          } // end j loop
+          if (weights) {
+            agent.critic_target.model = await tf.loadLayersModel(tf.io.browserFiles(
+              [modelFiles[i], weights]));
+            agent.critic_target.model.compile({optimizer: agent.c_opt1, loss: tf.losses.meanSquaredError});
+            console.log(`Loaded critic_target model`);
+            const index = agent.loadedFiles.indexOf('critic_target');
+            if (index !== -1) {agent.loadedFiles.splice(index, 1);}
+            agent.loadedFiles.push(`critic_target`);
+          }
+          else {throw`critic_target weights file not found`}
+        }
+        break;  
+        case "critic_main2-model.json": {
+          let weights;
+          for (let j=0; j < modelFiles.length; j++) {
+            if (modelFiles[j].name === "critic_main2-model.weights.bin") {
+              weights = modelFiles[j];
+            }
+          } // end j loop
+          if (weights) {
+            agent.critic_main2.model = await tf.loadLayersModel(tf.io.browserFiles(
+              [modelFiles[i], weights]));
+            agent.critic_main2.model.compile({optimizer: agent.c_opt2, loss: tf.losses.meanSquaredError});
+            console.log(`Loaded critic_main2 model`);
+            const index = agent.loadedFiles.indexOf('critic_main2');
+            if (index !== -1) {agent.loadedFiles.splice(index, 1);}
+            agent.loadedFiles.push(`critic_main2`);
+          }
+          else {throw`critic_main2 weights file not found`}
+        }
+        break;  
+        case "critic_target2-model.json": {
+          let weights;
+          for (let j=0; j < modelFiles.length; j++) {
+            if (modelFiles[j].name === "critic_target2-model.weights.bin") {
+              weights = modelFiles[j];
+            }
+          } // end j loop
+          if (weights) { 
+            agent.critic_target2.model = await tf.loadLayersModel(tf.io.browserFiles(
+              [modelFiles[i], weights]));
+            agent.critic_target2.model.compile({optimizer: agent.c_opt2, loss: tf.losses.meanSquaredError});
+            console.log(`Loaded critic_target2 model`);
+            const index = agent.loadedFiles.indexOf('critic_target2');
+            if (index !== -1) {agent.loadedFiles.splice(index, 1);}
+            agent.loadedFiles.push(`critic_target2`);
+          }
+          else {throw`critic_target2 weights file not found`}
+        }
+        break;     
+      }
+      UI.modelsLoadedInfo.innerHTML = `Models Loaded: ${agent.loadedFiles}`;
+      
+    } // end i loop
+    } catch (error) {
+      console.error(`failed to load model: ${error}`);
+    }
+   // drag and drop
+  // let dropbox;
+
+  // dropbox = document.getElementById("dropbox");
+  // dropbox.addEventListener("dragenter", dragenter, false);
+  // dropbox.addEventListener("dragover", dragover, false);
+  // dropbox.addEventListener("drop", drop, false);
+  /*
+  function dragenter(e) {
+    e.stopPropagation();
+    e.preventDefault();
   }
   
-  loadModel() {
-
+  function dragover(e) {
+    e.stopPropagation();
+    e.preventDefault();
   }
+  */
+ /*
+  function drop(e) {
+    e.stopPropagation();
+    e.preventDefault();
+  
+    const dt = e.dataTransfer;
+    const files = dt.files;
+  
+    handleFiles(files);
+  }
+  */
+  }
+  loadMemory(file) {
+    
+    if (file) {
+    const reader = new FileReader();
+    
+    reader.onload = function (e) {
+      try {
+        const parsedData = JSON.parse(e.target.result);
+        if (parsedData.version !== Game.version) {
+          let ignorVer = confirm("The memory version and program version don't match. Continue anyway?")
+          if (!ignorVer) {return}
+        }
+        agent.memory.cnt = parsedData.cnt;
+        agent.memory.maxsize = parsedData.maxsize;
+        agent.memory.state_memory = parsedData.state_memory;//,observationSpace.stateSpace[0].length;
+        agent.memory.next_state_memory = parsedData.next_state_memory;//, observationSpace.stateSpace[0].length;
+        agent.memory.action_memory = parsedData.action_memory;//, agent.n_actions;
+        agent.memory.reward_memory = parsedData.reward_memory;
+        agent.memory.done_memory = parsedData.done_memory;
+      
+        console.log(`Loaded memory succesfully with count: ${parsedData.cnt}`);
+        
+        
+      } catch (error){
+        console.error('Error parsing JSON or storing memory:', error);
+      }
+    };
+
+    reader.readAsText(file);
+  }
+  }
+  async copyModel(from,to) {
+    /** Copy the model, from Local Storage to IndexedDB.
+    await tf.io.copyModel(
+    'localstorage://demo/management/model1',
+    'indexeddb://demo/management/model1');
+    
+    */
+  }
+  
 } // End Agent Class
-/*
-function envReset() {
-  // Initialize or reset the game environment and entities
-
- // numbersCopy = JSON.parse(JSON.stringify(nestedNumbers)); // DEEP COPY ARRAY CODE
-  //observationSpace.resetTarget();
-  observationSpace.stateSpace = JSON.parse(JSON.stringify(observationSpace.defaults));
-  observationSpace.next_stateSpace = JSON.parse(JSON.stringify(observationSpace.defaults));
-  const os = observationSpace.stateSpace;
-  const inputMax = os.max();
-  const inputMin = os.min();
-
-  const normalizedData = os.sub(inputMin).div(inputMax.sub(inputMin));
-  
-  return normalizedData
-  
-}
-*/
 
 function normalizeData(data) {
   const inputMax = data.map(feature => Math.max(...feature));
@@ -607,7 +841,7 @@ function envStep(action, state, currentStep) {
   const mx = os[0][LN.aX];
   const my = os[0][LN.aY];
   //console.log(`mx: ${mx}, my: ${my}`);
-  Game.agentMoves.push([mx, my]); // Fore drawing agent paths
+  
  // if (currentStep == 0 && (parseInt(UI.episodeSlider.value) > Game.maxDrawEpisodes)) {
   //  Game.entities.splice(0, agent.batch_size);
  // }
@@ -722,13 +956,13 @@ function calculateTimePenalty(step, maxSteps) {
   //reward -= angleDegDif;
   //console.log(`step: ${n_steps}, civ Dist: ${civDist}`);
   //console.log(`distanceBase: ${distanceBase}`);
-  console.log(`Distance Penalty: ${distancePenalty}`);
+  //console.log(`Distance Penalty: ${distancePenalty}`);
   //console.log(`civAngle: ${civAngle}`);
   //console.log(`angleDeg 1: ${angleDeg1}`);
   //console.log(`angleDeg 2: ${angleDeg2}`);
   //console.log(`angleDegDif: ${angleDegDif}`);
   //console.log(`scaled angle dif: ${scaledAngleDegDif}`);
-  console.log(`Angle Penalty: ${anglePenalty}`);
+  //console.log(`Angle Penalty: ${anglePenalty}`);
   //console.log(`stability Reward: ${angleStabilityReward}`);
   //console.log(`total Reward: ${totalReward}`);
   //console.log(`angleRadDiff: ${angleRadDiff}`);
@@ -764,9 +998,9 @@ function calculateTimePenalty(step, maxSteps) {
   
   //reward = scaleToMinusOneToOne(reward, minVal, maxVal);
   //console.log(`scaled reward: ${scaledReward}`);
-  console.log(`time penalty: ${timePenalty}`);
-  console.log(`final penalty: ${penalty}`);
-  console.log(`final reward: ${reward}`);
+  //console.log(`time penalty: ${timePenalty}`);
+  //console.log(`final penalty: ${penalty}`);
+  //console.log(`final reward: ${reward}`);
  
   // Assuming angle is normalized between -1 and 1
 //let normalizedAngle = civAngle / maxPossibleAngleValue; 
@@ -800,6 +1034,9 @@ function calculateTimePenalty(step, maxSteps) {
   // Return the next state, reward, and whether the game is done
   //const nextState = getGameState(); // Implement this to return the game state
   if (currentStep >= agent.maxStepCount) {isDone = true}
+  let terminalFlag = false;
+  if (isDone) {terminalFlag = true}
+  Game.agentMoves.push([mx, my, terminalFlag]); // Fore drawing agent paths
   return { next_state: next_State, reward: reward, isDone: isDone };
 }
 
