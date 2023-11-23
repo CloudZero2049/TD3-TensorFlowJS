@@ -5,24 +5,22 @@ window.ondrag = function(e) {e.preventDefault();};
 window.ondblclick = function(e) {e.preventDefault();};
 window.oncontextmenu = function(e) {e.preventDefault();};
 
-const startPlayerButton = document.getElementById("startPlayerButton");
-const startTD3Button = document.getElementById("startTD3Button");
-
 const ctx = myCanvas.getContext("2d");
 const ctxBG = bgCanvas.getContext("2d");
-const rewardTextArea = document.getElementById("rewardTextArea");
-const punishTextArea = document.getElementById("punishTextArea");
-
 
 let player, civ1;
 const UI = {
+    startPlayerButton: document.getElementById("startPlayerButton"),
+    startTD3Button: document.getElementById("startTD3Button"),
     agentWins: document.getElementById("agentWins"),
+    episodesRan: document.getElementById("episodesRan"),
     pathsCheckbox: document.getElementById("pathsCheckbox"),
     episodeSlider: document.getElementById("episodeRange"),
     stepSlider: document.getElementById("stepRange"),
     batchSlider: document.getElementById("batchRange"),
     warmupSlider: document.getElementById("warmupRange"),
     randAgentCheckbox: document.getElementById("randAgentCheckbox"),
+    randCivCheckbox: document.getElementById("randCivCheckbox"),
     aSliderX: document.getElementById("agentRangeX"),
     aSliderY: document.getElementById("agentRangeY"),
     cSliderX: document.getElementById("civRangeX"),
@@ -40,18 +38,20 @@ const UI = {
 }
 
 const Game = {
-    version: 0.001,
+    version: 0.02,
     running: false, 
     user: "TD3",
-    width: 600,
+    width: 500,
     height: 500,
     entities: [],
     agentWins: 0,
     entityCounter: 0,
     rewards: 0,
     punishments: 0,
+    episodesRan: 0,
     maxDrawEpisodes: 25,
     agentMoves: [],
+    civilianMoves: [], // animation?
     init: function() {
         this.drawBG();
         loadEnts();
@@ -65,8 +65,8 @@ const Game = {
        // ctx.fillStyle = "blue";
        // ctx.fillRect(150,150,20,20);
 
-        startPlayerButton.disabled = false;
-        startTD3Button.disabled = false;
+        UI.startPlayerButton.disabled = false;
+        UI.startTD3Button.disabled = false;
         //this.start();
     },
     start: function(user) {
@@ -75,18 +75,8 @@ const Game = {
         }
         if (this.running) {return}
         this.running = true;       
-        
-        startPlayerButton.disabled = true;
-        startTD3Button.disabled = true;
-        //const episodeSlider = document.getElementById("episodeRange");
-        //const stepSlider = document.getElementById("stepRange");
-        //const batchSlider = document.getElementById("batchRange");
-        //const warmupSlider = document.getElementById("warmupRange");
-        //const aSliderX = document.getElementById("agentRangeX");
-        //const aSliderY = document.getElementById("agentRangeY");
-        //const cSliderX = document.getElementById("civRangeX");
-        //const cSliderY = document.getElementById("civRangeY");
-        //UI.episodeSlider.style.background = "black";
+        UI.startPlayerButton.disabled = true;
+        UI.startTD3Button.disabled = true;
         UI.stepSlider.style.background = "black";
         UI.batchSlider.style.background = "black";
         UI.warmupSlider.style.background = "black";
@@ -102,7 +92,9 @@ const Game = {
         if (this.user == "TD3") {
             player.user = "TD3";
             Game.agentMoves = [];
+            Game.civilianMoves = [];
             UI.modelsInput.disabled = true;
+            if (UI.randCivCheckbox.checked) {this.loadCivilian()}
             if (UI.randAgentCheckbox.checked) {this.loadAgent()}
             const episodes = UI.episodeSlider.value;
             const steps = UI.stepSlider.value;
@@ -112,7 +104,7 @@ const Game = {
             console.info(tf.memory());
             console.info("TD3 Complete");
             this.running = false;
-            startTD3Button.disabled = false;
+            UI.startTD3Button.disabled = false;
             UI.episodeSlider.disabled = false;
             UI.aSliderX.disabled = false;
             UI.aSliderY.disabled = false;
@@ -164,9 +156,7 @@ const Game = {
     loadPlayer: function() {
        // Game.entities.push(player = new Player(++Game.entityCounter,150,150,"human"));
     },
-    loadAgent: function() { 
-       // Game.entities.push(player = new Player(++Game.entityCounter,150,150,"TD3"));
-        
+    loadAgent: function() {  
         let center = [civ1.x + (civ1.width/2), civ1.y + (civ1.height/2)];
         
         let agentLoc = this.getAgentSpawn(center)
@@ -174,19 +164,32 @@ const Game = {
         player.y = agentLoc[1];
         Game.redrawInit();
     },
-    getAgentSpawn: function(center) { // center is [x,y]
-        const radius = 100;
-        const fixedDistance = 50
+    loadCivilian: function() { 
+         let civLoc = this.getCivilianSpawn()
+         civ1.x = civLoc[0];
+         civ1.y = civLoc[1];
+         Game.redrawInit();
+     },
+    getAgentSpawn: function(center) { // center is [x,y] // player movement 5 * batchSize
+        //const radius = 64;
+        const maxDistance = player.speed * (agent.maxStepCount - 1);
+        const minDistance = player.speed * 5; // minimum 5 steps to reach civilian
         let x,y;
         do {
             const angle = Math.random() * 2 * Math.PI; // Random angle in radians
-            const distance = fixedDistance + Math.random() *(radius - fixedDistance); // Random place along radius
+            const distance = minDistance + Math.random() * (maxDistance - minDistance); // Random place along radius
         
             // Calculate the coordinates of the random point
-            x = center[0] + distance * Math.cos(angle);
+            x = center[0] + distance * Math.cos(angle); // these locations are center points of player/agent location
             y = center[1] + distance * Math.sin(angle);
-        } while (x < 10 || x >= Game.width || y < 10 || y >= Game.height);
+
+        } while (x < (player.width + 5) || x > (Game.width -(player.width + 5)) || y < (player.height + 5) || y >= (Game.height - (player.height + 5)));
     
+        return [x, y];
+    },
+    getCivilianSpawn: function() {
+        const x = civ1.width + (Math.floor(Math.random() * (Game.width - (civ1.width * 2)))); // leaving 20px gap on each side
+        const y = civ1.height + (Math.floor(Math.random() * (Game.height - (civ1.height * 2))));
         return [x, y];
     }
 } 
@@ -230,7 +233,8 @@ function animate() {
 function animateAgent() {
     //let checkbox = document.getElementById("pathsCheckbox");
     if (!UI.pathsCheckbox.checked) {Game.drawBG();}
-    ctx.clearRect(player.x-1,player.y-1,player.width+2,player.height+2);
+    //ctx.clearRect(player.x-1,player.y-1,player.width+2,player.height+2);
+    ctx.clearRect(0,0,Game.width,Game.height);
     let c1 = 0;
     let start = 0;
     let startFlagged = false;
@@ -239,6 +243,7 @@ function animateAgent() {
     let alphaCount = 0;
     let alphaMult = 1;                                    
     let alphaBase = Math.floor(agent.maxStepCount / 9); // 7, 14, 21, 28 , 35 , 42 , 49 , 56+ (*9, 1.0 alpha)
+    let civColors = [];
 
     if (Game.agentMoves.length > max) {
         start = Game.agentMoves.length - max;
@@ -251,9 +256,7 @@ function animateAgent() {
    
 
     //console.log(`moveX: ${moveX}, moveY: ${moveY }`);
-    //let r = Math.floor(Math.random() * (255 + 1))
-    //let g = Math.floor(Math.random() * (255 + 1))
-    //let b = Math.floor(Math.random() * (255 + 1))
+    
     let r,g,b;
     if (startFlagged) {
         c1++;
@@ -290,23 +293,58 @@ function animateAgent() {
      // if (alphaCount > (alphaBase * 4)) {alpha += 0.2;}
       
     let rgba = `rgba(${r},${g},${b},${alpha})`;
-   
-    alphaCount++
+    
 
+    alphaCount++
+    // Agent movement
     ctxBG.beginPath();
     ctxBG.arc(moveX, moveY, 2, 0, 2 * Math.PI);
     ctxBG.fillStyle = rgba;
     ctxBG.fill();
 
-    if (terminalFlag) {startFlagged = true}
+    if (terminalFlag) {
+        startFlagged = true;
+        let rgb = `rgb(${r},${g},${b})`;
+        civColors.push(rgb);
+    }
    }
 
     player.x = (Game.agentMoves[Game.agentMoves.length -1][0]) - (player.width / 2);  // getting the top left corner
-    player.y = (Game.agentMoves[Game.agentMoves.length -1][1]) - (player.height / 2);
+    player.y = (Game.agentMoves[Game.agentMoves.length -1][1]) - (player.height / 2); // coords are center unless refrencing object
     
-    civ1.draw()
     player.draw();
+    animateCivilian(civColors);
 
+}
+function animateCivilian(civColors) {
+    let start = 0;
+    let max = 15;
+    if (Game.civilianMoves.length > max) {
+        start = Game.civilianMoves.length - max;
+    }
+
+    for (let i = start; i < Game.civilianMoves.length; i++) {
+        let moveX = (Game.civilianMoves[i][0]);
+        let moveY = (Game.civilianMoves[i][1]);
+       // let r = 50 + (Math.ceil(Math.random() * 205));
+       // let g = 50 + (Math.ceil(Math.random() * 205));
+       // let b = 50 + (Math.ceil(Math.random() * 205));
+       // let rgb = `rgb(${r},${g},${b})`;
+
+        ctxBG.save();
+        ctxBG.beginPath();
+        ctxBG.arc(moveX, moveY, 5, 0, 2 * Math.PI);
+        ctxBG.strokeStyle = civColors[i];
+        ctxBG.lineWidth = 2;
+        ctxBG.stroke();
+        ctxBG.restore();
+    }
+    const os = observationSpace;
+    civ1.x = (os.civCoords[0]) - (civ1.width / 2);  // get top left corner
+    civ1.y = (os.civCoords[1]) - (civ1.height / 2);
+    //civ1.x = (Game.civilianMoves[Game.civilianMoves.length -1][0]) - (civ1.width / 2);  // getting the top left corner
+    //civ1.y = (Game.civilianMoves[Game.civilianMoves.length -1][1]) - (civ1.height / 2); // array values are centered
+    civ1.draw()
 }
 // map width: 600,
 // mapheight: 500,
@@ -316,7 +354,7 @@ function animateAgent() {
 function loadEnts() {
 Game.entities.push(player = new Player(++Game.entityCounter, 150, 150, "TD3")); // init values
 Game.entities.push(civ1 = new Civilian(++Game.entityCounter, 400, 200));
-Game.entities.push(new Zombie(++Game.entityCounter,10,10));
+//Game.entities.push(new Zombie(++Game.entityCounter,10,10));
 //zombies.push(new Zombie(++game.entityCounter,300,300,"medium"));
 }
 
