@@ -9,3 +9,6 @@
 2a) Running tf.memory() to track number of tensors (track memory leaks).
 2b) A notice saying "TD3 Complete" when it runs all the way through without errors.
 2c) Custom try/catch errors for loading model and memory data.	
+
+[Known Bugs]
+1) If a model file does not download properly, you can use this command in the dev console to manualy download the file (this will download both JSON and weights files. Just change "critic_target2" in both locations to the desired model): await agent.critic_target2.model.save('downloads://critic_target2-model');
