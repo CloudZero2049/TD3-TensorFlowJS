@@ -1,12 +1,13 @@
 [CURENT WORK]
 
-1) Good news! It can be said that the agent is officially learning! After running random agent spawns in a radius around the civilian, on my first trial run it only took about 200 episodes to find the civilian basically every time. Furethermore, when moving the civilian spawn afterwards, the agent quickly begins learning to re-converge on the new location (this would be a step 2 phase after initialy training the agent to go towards the civilian in the first place).
+1) Good news! I'm proud to announce that after doing a full test of 400 episodes with random spawns for both the agent and civilian, the agent made a perfect run. We now enter an exoerimental phase of fine-tuning (though it may not be necissary).
 
-1) I've been researching and fine tuning the reward system to try and get some real results from training the agent. It looks like it's going well.
+2) Just before the updates leading to version 0.02 there was a breakdown after about 600 episodes. The hope is that the changes fixed the problem but it still needs testing.
 
-2) currently working on save/load methods for models and memory. May take awhile to update on GitHub.
+3) I still would like final verification on the full setup of the program by other professionals to ensure there's no loose ends (very dificult without help). At least it is working as expected.
 
-3) I still would like final verification on the full setup of the program to ensure there's no loose ends (very dificult without help). At least it appears to be working as expected.
+4) I encountered a strange bug were not all models were downloaded (specifically critic_target2). It is a simple code and I'm not sure what caused it, probably a browser glitch. I was Able to manualy download through the dev console using: await agent.critic_target2.model.save('downloads://critic_target2-model');
+
 
 [CHANGE LOG]
 
@@ -169,4 +170,60 @@
 
 4) fixed alpha transparency on drawn agent paths.
 
+[11/20/23]
+
+1) Completed download / upload model mechanic. You can download just the actor_main model or all the models, and you can upload multiple models at once (may need some testing).
+
+2) try/catch statements have been set up for downloading and loading models for custom error messages (and to prevent script crashing).
+
+3) To prevent errors, you can only upload saved models before running the agent for the first time.
+
+[11/21/23]
+
+1) Changed page title to "TD3 AI: Find Target"
+
+2) Removed zombie from the canvas (for now)
+
+3) Added an "episodesRan" variable (game.js) to keep track of episodes ran (since page refresh).
+
+4) created a "civilianMoves" variable (game.js) to keep track of random civilian spawns for drawing.(coords are pushed at envReset()). Civilian locations are represented as an ring tied to the color of the agent episode.
+
+5) fixed agent random spawn distance. Max spawn distance is now player.speed * episode length - controll value. Minimum is 5 steps to reach civilian.
+
+6) updated to version 0.01
+
+7) player (agent) speed (in pixels) is now tied directly to the player object (player.speed);
+
+8) fixed not taking absolute value of action[2] and action[3] for movement math. (these only determin speed not direction). This was mainly affecting the agent's colision with walls.
+
+9) replaced hard-coded distance numbers in wall colision detection with (player.width/2) and (player.height/2);
+
+10) adjusted random spawn checking to be more accurate.
+
+11) When agent doesn't move 0.5 or -0.5 is now sent to observation space instead of 0 (-1 or 1 for actual movement). Helps prevent zeroing out.
+
+12) Now doing custom normalization for every input entry. Multiplying x,y coordinates by 0.002 (observationSpace.xyNorm). 500 = 1. Distance is also normalized using xyNorm. Angle is normalized from 0-1.
+
+13) Adding a 2 new arrays to observation space that keep un-normalized location data, agentCoords and civCoords.
+
+14) adding 2 new variables in observation space to eep un-normalized distance and angle, rawDist and rawAngle.
+
+15) changed canvas width to 500 for easier normalization of coordinates.
+
+[11/22/23]
+
+1) movement threshold slightlity increased to 0.15
+
+2) I'm removing the actions from the observation states because I'm led to believe that they might interfere with actor training (and could possibly cause feedback loops). The actions are of course still included when sent to the critic models. The other variables such as agent coordinates, distance, and angle will still be included because they are influenced by but do not come directly from the actions.
+
+3) finished doing custom normalization on state factors. Total reward per step will be between -1 and 0 unless agent reaches the civilian in which case reward is 1. The penalties for distance and angle combine to be between 0-1 (they are subtracted at the end but before the civilian-reached check), and although theres a penalty of 0.5 for touching a wall and a continuous time penalty incrued, the max penalty is clipped to 1 (-1 reward).
+
+4) I'm proud to announce that after doing a full test of 400 episodes with random spawns for both the agent and civilian, the agent made a perfect run. We now enter an exoerimental phase of fine-tuning (though it may not be necissary).
+
+5) Increased version to 0.02
+
+-------------------------------------------------
+[To do notes]
+
+civilian circle indicator colors may not be working 100% as intended.
 is leakyRelu better than Relu?
