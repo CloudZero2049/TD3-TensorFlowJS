@@ -2,7 +2,7 @@
 <html lang="us">
 <head>
 <meta charset="UTF-8">
-<title>Testing TD3 AI</title>
+<title>TD3 AI: Find Target</title>
 
 <style rel="stylesheet" type="text/css">
 
@@ -93,10 +93,9 @@ span {
 </div>
 
 <div id="infoDiv">
-  <!--<span id="rewardTextArea" style="color:red">Rewards: 0</span>
-  <span id="punishTextArea" style="color:blue">penalties: 0</span>
--->
-  <span id="agentWins" style="color:rgb(229, 194, 0)">Times Won: 0</span>
+  
+  <span id="agentWins" style="color:rgb(0, 190, 6)">Times Won: 0</span>
+  <span id="episodesRan" style="color:rgb(38, 0, 229)">Episodes Ran: 0</span>
   </br>
 
 <div id="buttonsDiv">
@@ -120,7 +119,9 @@ span {
     <label for="warmupRange" id="warmupInfo">Warmup Steps: 64</label></br></br>
 
     <input type="checkbox" id="randAgentCheckbox" name="randAgentCheckbox" />
-    <label for="randAgentCheckbox">Random Agent Location?</label></br>
+    <label for="randAgentCheckbox">Random Agent Location?</label>
+    <input type="checkbox" id="randCivCheckbox" name="randCivCheckbox" />
+    <label for="randCivCheckbox">Random Civilian Location?</label></br>
 
     <input type="range" min="10" max="570" value="150" class="slider" id="agentRangeX">
     <label for="agentRangeX" id="aRangeInfoX">Agent Start X: 150</label></br>
@@ -151,15 +152,7 @@ span {
   
 </div>
 </div>
-<!--
-await agent.actor_main.save('downloads://actor_main-model');
-      await agent.actor_target.save('downloads://actor_target-model');
-      await agent.critic_main.save('downloads://critic_main-model');
-      await agent.critic_target.save('downloads://critic_target-model');
-      await agent.critic_main2.save('downloads://critic_main2-model');
-      await agent.critic_target2.save('downloads://critic_target2-model');
 
--->
 <script src="utils.js"> </script>
 <script src="Classes.js"> </script>
 <script src="game.js"></script>
@@ -167,39 +160,31 @@ await agent.actor_main.save('downloads://actor_main-model');
 <script src="collisions.js"> </script>
 <script src="keyboardControl.js"> </script>
 <script>
-    //let episodeSlider = document.getElementById("episodeRange");
+    
     let episodeOutput = document.getElementById("episodeInfo");
     episodeOutput.innerHTML = `Episodes: ${UI.episodeSlider.value}`; // Display the default slider value
 
-    //let stepSlider = document.getElementById("stepRange");
     let stepOutput = document.getElementById("stepInfo");
     stepOutput.innerHTML = `Steps: ${UI.stepSlider.value}`;
 
-    //let batchSlider = document.getElementById("batchRange");
     let batchOutput = document.getElementById("batchInfo");
     batchOutput.innerHTML = `Batch Size: ${UI.batchSlider.value}`;
 
-    //let warmupSlider = document.getElementById("warmupRange");
     let warmupOutput = document.getElementById("warmupInfo");
     warmupOutput.innerHTML = `Warmup Steps: ${UI.warmupSlider.value}`;
 
-    //let aSliderX = document.getElementById("agentRangeX");
     let aOutputX = document.getElementById("aRangeInfoX");
     aOutputX.innerHTML = `Agent Start X: ${UI.aSliderX.value}`;
 
-    //let aSliderY = document.getElementById("agentRangeY");
     let aOutputY = document.getElementById("aRangeInfoY");
     aOutputY.innerHTML = `Agent Start Y: ${UI.aSliderY.value}`;
 
-    //let cSliderX = document.getElementById("civRangeX");
     let cOutputX = document.getElementById("cRangeInfoX");
     cOutputX.innerHTML = `Civilian Start X: ${UI.cSliderX.value}`;
 
-    //let cSliderY = document.getElementById("civRangeY");
     let cOutputY = document.getElementById("cRangeInfoY");
     cOutputY.innerHTML = `Civilian Start Y: ${UI.cSliderY.value}`;
 
-    // Update the current slider value (each time you drag the slider handle)
     UI.episodeSlider.oninput = function() {
       episodeOutput.innerHTML = `Episodes: ${this.value}`;
     }
@@ -225,6 +210,21 @@ await agent.actor_main.save('downloads://actor_main-model');
         UI.aSliderY.hidden = false;
         UI.aRangeInfoX.hidden = false;
         UI.aRangeInfoY.hidden = false;
+      }
+    }
+    UI.randCivCheckbox.oninput = function() {
+      if (randCivCheckbox.checked) {
+        UI.cSliderX.hidden = true;
+        UI.cSliderY.hidden = true;
+        UI.cRangeInfoX.hidden = true;
+        UI.cRangeInfoY.hidden = true;
+        
+      }
+      else {
+        UI.cSliderX.hidden = false;
+        UI.cSliderY.hidden = false;
+        UI.cRangeInfoX.hidden = false;
+        UI.cRangeInfoY.hidden = false;
       }
     }
     UI.aSliderX.oninput = function() {
@@ -254,7 +254,7 @@ await agent.actor_main.save('downloads://actor_main-model');
     const memoryInput = document.getElementById('memoryInput');
     memoryInput.addEventListener('change', checkMemory);
     function checkMemory() {
-      const file = memoryInput.files[0]; // need Check for proper file info
+      const file = memoryInput.files[0];
       if (file){
         if (file.type !== `application/json`) {
           throw "Memory file is not valid type. Expected JSON";
