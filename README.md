@@ -30,16 +30,18 @@
 
 	5g) geeksforgeeks.org (helping learn TF.js functions): https://www.geeksforgeeks.org/
 
-	5h) Machine learning with Phil, TD3 video: https://www.youtube.com/watch?v=ZhFO8EWADmY&list=WL&index=34&t=2364s
+	5h) Machine learning with Phil, TD3 video: https://www.youtube.com/watch?v=ZhFO8EWADmY
 
-	5i) Machine learning with Phil, TD3 TD3video2: https://www.youtube.com/watch?v=1lZOB2S17LU&list=WL&index=33
+	5i) Machine learning with Phil, TD3 TD3video2: https://www.youtube.com/watch?v=1lZOB2S17LU
 
-	5j) machine Learning with Phil, DDPG video: https://www.youtube.com/watch?v=4jh32CvwKYw&list=PLuEC_Hx7ZKHXwwRVhrVVIqRH8DIoCgL39&index=30
+	5j) Machine Learning with Phil, DDPG video: https://www.youtube.com/watch?v=4jh32CvwKYw
 
-	5k) Justin Wallander, TD3 video: https://www.youtube.com/watch?v=-wq-luYhzy4&list=PLuEC_Hx7ZKHXwwRVhrVVIqRH8DIoCgL39&index=29
+	5k) Machine Learning with Phil, everything to know about actor critic methods: https://www.youtube.com/watch?v=LawaN3BdI00
 
- 	5l) Designing Rewards for Fast Learning, https://arxiv.org/pdf/2205.15400.pdf
+	5l) Justin Wallander, TD3 video: https://www.youtube.com/watch?v=-wq-luYhzy4
 
-   	5m) Reward (Mis)Design For Autonomous Driving, https://arxiv.org/pdf/2104.13906.pdf
+ 	5m) Designing Rewards for Fast Learning, https://arxiv.org/pdf/2205.15400.pdf
+
+   	5n) Reward (Mis)Design For Autonomous Driving, https://arxiv.org/pdf/2104.13906.pdf
 
 7) About CloudZero (2023): I am a 32-year-old college student working towards an AA. My goal is to become a computer programmer of some sort. I have a deep interest in game design and artificial intelligence.
