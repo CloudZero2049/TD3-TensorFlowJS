@@ -1,4 +1,4 @@
-// tf.memory.numTensors() // reduce t o1 round to find where memory leaks are.
+// tf.memory.numTensors() 
 //tidy() -->
 // const result = tf.scalar(121);
 // res1 = tf.keep(result.sqrt());
@@ -29,10 +29,6 @@ const observationSpace ={
   //[agentX,agentY, directionX, directionY, agentSpeedX ,agentSpeedY,civilianX,civilianY,dist to civ, angle to civ] 10 total
   initUpdate: function() { // [0,0],[0,0]
     let defs = this.defaults;
-    //const aSliderX = UI.aSliderX;
-    //const aSliderY = UI.aSliderY;
-    //const cSliderX = UI.cSliderX;
-    //const cSliderY = UI.cSliderY;
   
     this.agentCoords[0] = parseInt(UI.aSliderX.value) + (player.width/2);
     this.agentCoords[1] = parseInt(UI.aSliderY.value) + (player.height/2);
@@ -144,13 +140,10 @@ class Critic {  // it is possible to combine the 4 critics into 2 critics suppos
    // STEP 10b: we concatinate the input state with actio
   // Concatenate the two tensors along the last axis (axis 1)
     const catTensor = tf.concat([inputstate, actions], 1);
-    //let oldCat = inputstate.concat(action); doesn't work, says shape is different
-   //const normalCat = normalizeData(catTensor);
    //console.log(`catTensor: ${catTensor.shape}`);
     const x = this.model.predict(catTensor);
     
     return x;
-  
   }
 }
 //kernelInitializer: tf.randomNormal(shape)
@@ -236,31 +229,24 @@ class Agent {
       return mu_prime
     */ 
   
-  const stateTensor = tf.tensor(state); // [] added again because of DDPG video, then again because CGPT
+  const stateTensor = tf.tensor(state);
   //console.log(`state tensor: ${stateTensor}, with shape: ${stateTensor.shape}`);
   // STEP 1b: get actions from actor_main
   let actions = this.actor_main.call(stateTensor);
-  //let reshapedActions = tf.reshape(tf.clone(actions),[2]);
-  //if (!actions.shape) {actions = tf.reshape(actions,[1,4]);}
   //console.log(`Actor actions: ${actions}, with shape: ${actions.shape}`);
-  //console.log(actions);
   //console.log(`reshapedActions: ${reshapedActions}, with shape: ${reshapedActions.shape}`); 
   if (!evaluate) { // meaning it is training
-    const noise = tf.randomNormal(actions.shape, 0.0, 0.1); // video uses mu, adds noise. need more noise?
+    const noise = tf.randomNormal(actions.shape, 0.0, 0.1); 
     //console.log(`noise: ${noise}, with shape: ${noise.shape}`);
-    //actions.add(noise);
     actions = tf.add(actions, noise);
-    //console.log(`after noise: ${actions}, with shape: ${actions.shape}`);
   }
   //console.log(`act actions: ${actions}`);
   // video adds noise in here. clamping actions prevent noise causing going over or under
   //video sets state, mu, and my_prime
   // we clip actions because noise can cause them to go outside the bounds
   const clippedActions = tf.clipByValue(actions, this.min_action, this.max_action); 
-  //const scaledActions = tf.mul(clippedActions, maxTensor); // mac_action isn't tensor, but is 1 anyway
   const scaledActions = tf.mul(clippedActions, tf.scalar(this.max_action));
   //console.log(`scaledA: ${scaledActions}`); 
-  // self.time_step += 1 (video)
   // Step 1c: returned action is the first element of a flatened clipped action array
   return scaledActions.arraySync()[0];  //--> [1,-1]
 }); // end tidy
@@ -282,7 +268,6 @@ return returnValue;
     const targets1 = this.actor_target.model.getWeights().map(tf.clone);
     //console.log(`target weights1: ${targets1}`);
     const mainWeights1 = this.actor_main.model.getWeights().map(tf.clone);
-    //weights1.append ( weight * tau + targets1[i]*(1-tau))
     //console.log(`mainweights1: ${mainWeights1}`);
     for (let i = 0; i < mainWeights1.length; i++) {
       const updatedWeight1 = tf.tidy(() => {
@@ -354,16 +339,8 @@ return returnValue;
     //console.log(`nextStatesTensor: ${nextStatesTensor}, shape: ${nextStatesTensor.shape}`);
     //console.log(`donesTensor: ${donesTensor}`);
     //console.log(`rewardsTensor: ${rewardsTensor}`);
-     //targetActions = targetActions.mul(this.max_action).clipByValue(this.min_action, this.max_action);
-    // from video. when new states are terminal (0s). where done is true, values are set to 0
-    //q1_[done] = 0.0 
-    //q2_[done] = 0.0
-    //dimentional manipulation
-    //q1_ = q1_view(-1)
-    //q2_ = q2_.view(-1)
-    //target = reward + self.gamma*critic_value_  (video)
-    //target = target.view(self.batch_size, 1) (video) doesnt have .mul(dones)
-    // video zeros the optimizers here
+     
+    // video zeros the optimizers here?
 
       // STEP 10a: the two critic models take each the couple (s, a) as input and return Q-values as outputs: Q1(s, a), Q2(s, a)
       // STEP 11: we compute the loss coming from the two Critic models: criticLoss = MSE_Loss(Q1(s, a), Qt) + MSE_Loss(Q2(s, a), Qt)
@@ -374,7 +351,6 @@ return returnValue;
       
       //console.log(`targetActions actions: ${targetActions1}`);
       //console.log(`rewards1: ${rewards1}`);
-      //console.log(`dones: ${donesTensor}`);
       // STEP 6: We add Gaussian noise to the next action a` and we clamp it in a range of values supported by environment
       const ranNormalActions1 = tf.add(targetActions1, tf.clipByValue(tf.randomNormal(targetActions1.shape, 0.0, 0.2), -0.5, 0.5));//.map(tf.clone); // video 2 uses actionsTensor?
       //console.log(`randomNormal actions: ${ranNormalActions1}, ${ranNormalActions1.shape}`);
@@ -391,9 +367,7 @@ return returnValue;
       // STEP 9: we get the final target of the two Critic models (Qt = r + gamma * min(Qt1, Qt2) * dones, where gamma is the discount factor)
       //const targetValues1 = rewards1.add(nextTargetStateValue1.mul(tf.scalar(agent.gamma).mul(donesTensor))); //Phil does 1-dones,mines at save
       const targetValues1 = tf.add(rewards1, tf.mul(tf.scalar(agent.gamma), tf.mul(nextTargetStateValue1, donesTensor)));
-      // Phil says "that will set the value of the second term, gamma*critic value to 0 everyhwere the done flag is true"
       //console.log(`targetValues: ${targetValues1}, ${targetValues1.shape}`);
-      // says we have to squeeze because we have batch dimentino, and doesn't learn if you past that through.
       const criticValue1 = agent.critic_main.call(statesTensor, actionsTensor).squeeze([1]); // squeese? says wont learn otherwise
       //console.log(`criticValue: ${criticValue1}, ${criticValue1.shape}`);
       const criticLoss1 = tf.losses.meanSquaredError(criticValue1, targetValues1);
@@ -418,10 +392,8 @@ return returnValue;
     const criticLoss2 = tf.losses.meanSquaredError(criticValue2, targetValues2);
   
     return criticLoss2
-    //return criticMean2;
     };
 
-    
     // STEP 12: we backpropigate the Critic loss and update the parameters of the critic models through optiizers
     const gWeights1 = this.critic_main.model.getWeights(true);
     //console.log(`gWeights1: ${gWeights1}`);
@@ -448,17 +420,15 @@ return returnValue;
         const actorLoss = tf.mean(criticCall);
         //console.log(`actor loss: ${actorLoss}`);
         return actorLoss;
-            // let actor_loss = tf.math.reduce_mean(actor_loss)
       }
       
       const gWeights3 = this.actor_main.model.getWeights(true);
       
       this.actor_main.model.optimizer.minimize(lossFunction3,gWeights3);
 
-       // STEP 14/15... updating weights every two iterations. moved here because the original paper says to.
-      //this.updateTarget(); // same as self.update_netowrk_parameters() in video
-      
+       // updating weights every two iterations here because the original paper says to?
     }
+    // STEP 14/15... updating weights 
     this.updateTarget();
   }); // End Tidy
   }
@@ -493,7 +463,7 @@ return returnValue;
       version: Game.version,
       cnt: agent.memory.cnt, // integer
       maxsize: agent.memory.maxsize,  // integer
-      state_memory: agent.memory.state_memory,  // tensor // .arraySync()
+      state_memory: agent.memory.state_memory,  // tensor
       next_state_memory: agent.memory.next_state_memory, // tensor
       action_memory: agent.memory.action_memory, // tensor
       reward_memory: agent.memory.reward_memory, // tensor
@@ -650,35 +620,6 @@ return returnValue;
     } catch (error) {
       console.error(`failed to load model: ${error}`);
     }
-   // drag and drop
-  // let dropbox;
-
-  // dropbox = document.getElementById("dropbox");
-  // dropbox.addEventListener("dragenter", dragenter, false);
-  // dropbox.addEventListener("dragover", dragover, false);
-  // dropbox.addEventListener("drop", drop, false);
-  /*
-  function dragenter(e) {
-    e.stopPropagation();
-    e.preventDefault();
-  }
-  
-  function dragover(e) {
-    e.stopPropagation();
-    e.preventDefault();
-  }
-  */
- /*
-  function drop(e) {
-    e.stopPropagation();
-    e.preventDefault();
-  
-    const dt = e.dataTransfer;
-    const files = dt.files;
-  
-    handleFiles(files);
-  }
-  */
   }
   loadMemory(file) {
     
@@ -694,9 +635,9 @@ return returnValue;
         }
         agent.memory.cnt = parsedData.cnt;
         agent.memory.maxsize = parsedData.maxsize;
-        agent.memory.state_memory = parsedData.state_memory;//,observationSpace.stateSpace[0].length;
-        agent.memory.next_state_memory = parsedData.next_state_memory;//, observationSpace.stateSpace[0].length;
-        agent.memory.action_memory = parsedData.action_memory;//, agent.n_actions;
+        agent.memory.state_memory = parsedData.state_memory; //,observationSpace.stateSpace[0].length;
+        agent.memory.next_state_memory = parsedData.next_state_memory; //, observationSpace.stateSpace[0].length;
+        agent.memory.action_memory = parsedData.action_memory; //, agent.n_actions;
         agent.memory.reward_memory = parsedData.reward_memory;
         agent.memory.done_memory = parsedData.done_memory;
       
@@ -737,14 +678,6 @@ function normalizeData(data) { // aX * 0.001 to normalize
     
   );
   return normData
-}
-*/
-/*
-function normalizeReward(reward, minRange = -1, maxRange = 1) {
-  
-  const scaledValue = (x - minRange) / (maxRange - minRange) * 2 - 1;
-  return Math.max(-1, Math.min(1, scaledValue));
-
 }
 */
 function envReset() {
@@ -864,33 +797,13 @@ function envStep(action, state, currentStep) {
     }
     //os[0][LN.dY] = 1;
   }
-  //else {os[0][LN.dY] = actionClone[1] > 0 ? 0.5 : -0.5;}
-  //os[0][LN.dX] = actionClone[0]; // update agent direction
-  //os[0][LN.dY] = actionClone[1];
-  //os[0][LN.sX] = actionClone[2]; // update agent speed in next_state
-  //os[0][LN.sY] = actionClone[3];
-
-  
-  //console.log(`mx: ${mx}, my: ${my}`);
-  
- // if (currentStep == 0 && (parseInt(UI.episodeSlider.value) > Game.maxDrawEpisodes)) {
-  //  Game.entities.splice(0, agent.batch_size);
- // }
-  //if (Game.agentMoves.length > (agent.batch_size * Game.maxDrawBatches))
-
-  //animateAgent();
-
-  //console.log(`os2: ${observationSpace.next_stateSpace}`);
-  //const reward = calculateReward();
+ 
   let isDone = false;
   let reward = 0;
   let penalty = 0;
-  //let zomDist = utilsAI.distance(os[0][0],os[0][1],os[0][2],os[0][3]);
- // let civDist = utilsAI.distance(os[0][0],os[0][1],os[0][2],os[0][3]); 
   let civDist = utilsAI.distance(OS.agentCoords[0], OS.agentCoords[1], OS.civCoords[0], OS.civCoords[1]);
   let civAngle = utilsAI.angle([OS.agentCoords[0], OS.agentCoords[1]], [OS.civCoords[0], OS.civCoords[1]]);
   let agentHeading = utilsAI.angle([stateCoords[0], stateCoords[1]], [OS.agentCoords[0], OS.agentCoords[1]]); 
-  //let angleDegDif = Math.abs((civAngle * (180 / Math.PI)) - (agentHeading * (180 / Math.PI)));
 
   function angleDifferenceRadians(angle1, angle2) {
     let diff = Math.abs(angle1 - angle2);
@@ -899,110 +812,33 @@ function envStep(action, state, currentStep) {
 // ChatGPT says that using agentHeading is better to get it to turn towards civ, otherwise it measures change over time.
 let angleRadDif = angleDifferenceRadians(civAngle, agentHeading); // angleRadDif < ? or 0 + reward [0, PI]
 
-  //let angleDeg1 = (civAngle + Math.PI) / (2 * Math.PI); // Normalize to [0, 1];
-  //let angleDeg2 = (os[0][7] + Math.PI) / (2 * Math.PI);
-  //let angle1 = civAngle * (180 / Math.PI);
-  //let angle2 = agentHeading * (180 / Math.PI);
-  //console.log(`civAngle: ${civAngle}`);
-  //console.log(`agentHeading: ${agentHeading}`);
-  //console.log(`angle diff: ${angleRadDif}`);
-  //let angleDegDif = Math.abs(angleDeg1 - angleDeg2);
-   // let angleDegDif = Math.abs(civAngle - os[0][5]);
-  //let angleDeg1 = civAngle * (180 / Math.PI);
-  //let angleDeg2 = os[0][5] * (180 / Math.PI);
-  //let angleDegDif = Math.abs(angleDeg1 - angleDeg2);
-  //let angleRadDiff = angleDegDif * (Math.PI / 180);
    //1rad × 180/π = 57.296°
   //1° × π/180 = 0.01745rad
-  // Assuming angleDegDif is in the range [0, 180]
-  //let angleReward = Math.abs(180 - angleRadDif); // Reward increases as angleDegDif approaches 0
-  // Scale the angle reward if needed
-  //let angleRewardScaling = 0.003; // Adjust as needed 0.005
- //angleReward *= angleRewardScaling;
-
+ 
   let anglePenalty = angleRadDif / Math.PI; // Penalty decreases as this approaches 0. [0, 1]
   anglePenalty /= 2; // [0, 0.5] // Share space with distancePenalty
-  //anglePenalty -= 0.05; // [0, 0.45] // Gives room for time penalty
-  // Scale the angle reward if needed
-  //let anglePenaltyScaling = 0.2; // Adjust as needed 0.005
-  //anglePenalty *= anglePenaltyScaling;
-  //anglePenalty /= 2;
-  //let angleReward = 0;
-  // Penalty for significant changes in angle
-  //let scaledAngleDegDif = angleDegDif * 100;
-  //let angleChangePenalty = 2.0; // Adjust as needed
-  //let angleStabilityReward = Math.exp(-angleChangePenalty * scaledAngleDegDif); // Reward increases as angleDegDif approaches 0
-  //angleStabilityReward = angleStabilityReward.toFixed(12);
-  /*
-  if (angleDegDif > 1.5) {angleReward -= 0.5}
-  else if (angleDegDif > 1.0) {angleReward -= 0.3}
-  else if (angleDegDif > 0.5) {angleReward += 0.3}
-  else {angleReward += 0.5}
-  */
-  //let distanceReward = 0;
-  //let distanceReward = 1 / civDist; // this one is for rewards
+  
   let distancePenalty = civDist; 
-  // Scale the distance reward if needed
+  
   let distancePenaltyScaling = observationSpace.xyNorm; // [0, 1] xyNorm is hardcoded 0.002 based on map size
   distancePenalty *= distancePenaltyScaling;
   distancePenalty /= 2; // [0, 0.5] // share space with anglePentalty
-  //distancePenalty -= 0.05; // [0, 0.45] // Gives room for time penalty
-  //distanceBase *= 100;
-
-  //const stateDifX = Math.abs(state[0][LN.aX] - os[0][LN.cX]); // agent x,y - civ x,y
-  //const stateDifY = Math.abs(state[0][LN.aY] - os[0][LN.cY]);
-  //const n_stateDifX = Math.abs(os[0][LN.aX] - os[0][LN.cX]);
-  //const n_stateDifY = Math.abs(os[0][LN.aY] - os[0][LN.cY]);
-
-  //if (n_stateDifX < stateDifX) {distanceReward += 0.4}
-  //else if (n_stateDifX > stateDifX) {penalty += 0.5}
-  //if (n_stateDifY < stateDifY) {distanceReward += 0.4}
-  //else if (n_stateDifY > stateDifY) {penalty += 0.5}
-
-  //if (civDist < os[0][LN.dist]) {distanceReward += 0.1}
-  //if (civDist > os[0][LN.dist]) {penalty += 1}
   
-  //let totalReward = distanceReward + distanceBase + angleReward;
-  //let totalReward = distanceBase + angleReward;
-  
-  //reward += totalReward;
-  //reward += distancePenalty;
   penalty += anglePenalty + distancePenalty;
-  /*
-  //const minVal = 0; // having negative here allows a possitive reward can scale into a negative
-  //const maxVal = 3;
-
-  function scaleToMinusOneToOne(x, minVal, maxVal) {
-    let scaledValue = -1 + 2 * (x - minVal) / (maxVal - minVal);
-    return Math.min(1, Math.max(-1, scaledValue)); // if values go over they should clamp to -1 or 1
-}
-*/
-/*
-function scaleZeroOne(x) {
-  return x / (x + 1);
-}
-function scaleWithTanh(x) {
-  return Math.tanh(x);
-}
-*/
+ 
 function calculateTimePenalty(step, maxSteps) {
   const maxPenalty = -0.1; // Adjust as needed
   const timeRatio = step / maxSteps;
   const timePenalty = Math.max(maxPenalty, maxPenalty * timeRatio);
   return timePenalty;
 }
-  //reward -= angleDegDif;
-  //console.log(`step: ${n_steps}, civ Dist: ${civDist}`);
+ 
   //console.log(`civDist: ${civDist}`);
-  //console.log(`Distance Penalty: ${distancePenalty}`);
   //console.log(`civAngle: ${civAngle}`);
-  //console.log(`angleDeg 1: ${angleDeg1}`);
-  //console.log(`angleDeg 2: ${angleDeg2}`);
-  //console.log(`angleDegDif: ${angleDegDif}`);
-  //console.log(`scaled angle dif: ${scaledAngleDegDif}`);
+   //console.log(`agentHeading: ${agentHeading}`);
   //console.log(`angleRadDif: ${angleRadDif}`);
+  //console.log(`Distance Penalty: ${distancePenalty}`);
   //console.log(`Angle Penalty: ${anglePenalty}`);
-  //console.log(`stability Reward: ${angleStabilityReward}`);
   //console.log(`total Reward: ${totalReward}`);
   
   OS.rawDist = civDist;
@@ -1010,11 +846,6 @@ function calculateTimePenalty(step, maxSteps) {
   osNS[0][LN.dist] = civDist * OS.xyNorm;
   osNS[0][LN.angle] = (civAngle + Math.PI) / (2 * Math.PI);
 
-  //const scaledReward = scaleZeroOne(reward);
-  //const scaledPenalty = scaleZeroOne(penalty);
-  //reward = scaledReward - scaledPenalty;
-
-  //const maxSteps = agent.maxStepCount; 
   const timePenalty = calculateTimePenalty(currentStep, agent.maxStepCount);
  // if (stepNumber % 3 === 0) {}
 
@@ -1026,11 +857,6 @@ function calculateTimePenalty(step, maxSteps) {
   
   reward = reward - penalty;    // currently reward is 0
   
-  //console.log(`penalty: ${penalty}`);
-  //console.log(`pre-scaled reward: ${reward}`);
-  //reward = scaleWithTanh(reward);
-  //reward = scaleToMinusOneToOne(reward, minVal, maxVal);
-  //console.log(`scaled reward: ${scaledReward}`);
   //console.log(`time penalty: ${timePenalty}`);
   //console.log(`final penalty: ${penalty}`);
   //console.log(`pre-civ reward: ${reward}`);
@@ -1055,8 +881,6 @@ function calculateTimePenalty(step, maxSteps) {
   }
   //console.log(`final reward: ${reward}`);
   
-  //const base_Next_State = JSON.parse(JSON.stringify(observationSpace.next_stateSpace));
-  //const next_State = normalizeData(base_Next_State);
   const next_State = JSON.parse(JSON.stringify(observationSpace.next_stateSpace));
   //console.log(next_State);
   // Return the next state, reward, and whether the game is done
@@ -1073,21 +897,19 @@ function calculateTimePenalty(step, maxSteps) {
 // Math.seedrandom() ?
 
 const agent = new Agent(actionSpace.numberActions, observationSpace.stateSpace[0].length, observationSpace.stateSpace[0].length + actionSpace.numberActions); 
-let episodes = 5; ///100 - 2000 // check batches size
-//agent.batch_size = 32; // shortcut. Batch size for memory buffer. these are overidden below.
-//agent.maxStepCount = 32; // shortcut. steps to take per episode.
+let episodes = 5; // check batches size
 const epReward = [];
 const totalAvgReward = [];
-//let target = false;
 
-function main(epNum,stepSize,batchSize,warmupSteps) {  // Removed async   // 
+function main(epNum,stepSize,batchSize,warmupSteps) {
   let target = false;
   if (epNum && !isNaN(epNum) && epNum > 0) {episodes = epNum}
   if (stepSize && !isNaN(stepSize) && stepSize > 0) {agent.maxStepCount = stepSize}
   if (batchSize && !isNaN(batchSize) && batchSize > 0) {agent.batch_size = batchSize}
   if (warmupSteps && !isNaN(warmupSteps) && warmupSteps > 0) {agent.warmup = warmupSteps}
-  //if(agent.memory.cnt == 0) {observationSpace.initUpdate();}
+  
   observationSpace.initUpdate()
+
   for (let s = 0; s < episodes; s++) {
     if (!Game.running) {break}
     if (target) {
@@ -1104,32 +926,21 @@ function main(epNum,stepSize,batchSize,warmupSteps) {  // Removed async   //
       if (!Game.running) {break}
       //console.log(currentStep);
       //console.log(state);
-      //console.log(`State ${currentStep}: ${state}`) //, shape: ${}`);
-      //const normalState = normalizeData(state);
-      //console.log(`normState ${n_steps}: ${normalState}`);
-      //console.log(normalState);
       // STEP 1a: get an action based on the current state 
       const action = agent.act(state); // choose_action(observation), is envReset(). // video 2 adds more noise to the action
-      //console.log(state[0][6]);
       //console.log(action); // not a tensor, just array. [0,0,0,0]
-      //console.log(`first state: ${state}`);
       // STEP 2a: step the environment with the action, returning the new state, rewards, and if done
       const { next_state, reward, isDone } = envStep(action, state, currentStep);
-      //console.log(`reward: ${reward}`)
-      // remember to consider what happens with no training
       // STEP 3: save the new state to the memory buffer
       //console.log(`state after env: ${state}`);
       //console.log(`next_state: ${next_state}`);
       //console.log(`action after env: ${action}`);
       //console.log(`saving isDone as: ${isDone}`);
-      //console.log(reward);
-      //const normal_Next_State = normalizeData(next_state);
-      //const normalReward = normalizeData([reward]);
-
+      
       agent.savexp(state, next_state, action, isDone, reward); 
       
       // Step 4-15..: train the system
-      agent.train(); // Removed Await // only gets called if memory.cnt = agent.batch size
+      agent.train(); // only gets called if memory.cnt = agent.batch size
 
       // STEP 16: make the current state the new state
       state = JSON.parse(JSON.stringify(observationSpace.next_stateSpace)); // DEEP COPY
@@ -1137,15 +948,13 @@ function main(epNum,stepSize,batchSize,warmupSteps) {  // Removed async   //
       totalReward += reward;
       //console.log(`Reward: ${totalReward}`);
       
-      if (currentStep >= agent.maxStepCount) {stepDone = true} // forcing batch size episodes
+      if (currentStep >= agent.maxStepCount) {stepDone = true}
       currentStep++
 
       if (isDone || stepDone) {
         epReward.push(JSON.parse(JSON.stringify(totalReward)));
         const avgReward = epReward.slice(-100).reduce((a, b) => a + b, 0) / Math.min(epReward.length, 100);
         totalAvgReward.push(avgReward);
-
-        //if avg_score > best score : best_score = avg_score; agent.save_models()
 
         console.log(`Total reward at Episode ${s} is ${totalReward} and avg reward is ${avgReward}`);
 
@@ -1160,5 +969,4 @@ function main(epNum,stepSize,batchSize,warmupSteps) {  // Removed async   //
     }
   }
   animateAgent();
-  //animateCivilian();
 }
