@@ -1,6 +1,6 @@
-[CURENT WORK]
+[CURENT WORK] Version 0.002
 
-1) Good news! I'm proud to announce that after doing a full test of 400 episodes with random spawns for both the agent and civilian, the agent made a perfect run. We now enter an exoerimental phase of fine-tuning (though it may not be necissary).
+1) Good news! I'm proud to announce that after doing a full test of 400 episodes with random spawns for both the agent and civilian, the agent made a perfect run. I plan on doing a bit of fine-tuning before begin phase 2 where a Zombie will chase the agent.
 
 2) Just before the updates leading to version 0.02 there was a breakdown after about 600 episodes. The hope is that the changes fixed the problem but it still needs testing.
 
@@ -222,6 +222,11 @@
 
 5) Increased version to 0.02
 
+[11/25/23]
+
+1) I'm not sure how I could possibly combine an active animation on canvas with training the agent, so instead I created an "Action Replay" button That takes all the stored locations and makes and animation of them, available after a run of episodes. This is the better option so that animation doesn't bog down training.
+
+2) Disabled "Start Player" button because it currently has no purpose.
 -------------------------------------------------
 [To do notes]
 
