@@ -411,7 +411,6 @@ function animateAgent() {
     
     player.draw();
     animateCivilian(civColors);
-
 }
 
 function animateCivilian(civColors) {
