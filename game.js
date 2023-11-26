@@ -10,8 +10,9 @@ const ctxBG = bgCanvas.getContext("2d");
 
 let player, civ1;
 const UI = {
-    startPlayerButton: document.getElementById("startPlayerButton"),
+    //startPlayerButton: document.getElementById("startPlayerButton"),
     startTD3Button: document.getElementById("startTD3Button"),
+    actionReplayButton: document.getElementById("actionReplayButton"),
     agentWins: document.getElementById("agentWins"),
     episodesRan: document.getElementById("episodesRan"),
     pathsCheckbox: document.getElementById("pathsCheckbox"),
@@ -65,7 +66,7 @@ const Game = {
        // ctx.fillStyle = "blue";
        // ctx.fillRect(150,150,20,20);
 
-        UI.startPlayerButton.disabled = false;
+        //UI.startPlayerButton.disabled = false;
         UI.startTD3Button.disabled = false;
         //this.start();
     },
@@ -75,7 +76,7 @@ const Game = {
         }
         if (this.running) {return}
         this.running = true;       
-        UI.startPlayerButton.disabled = true;
+        //UI.startPlayerButton.disabled = true;
         UI.startTD3Button.disabled = true;
         UI.stepSlider.style.background = "black";
         UI.batchSlider.style.background = "black";
@@ -113,6 +114,7 @@ const Game = {
             UI.downloadMemoryButton.disabled = false;
             UI.downloadActorButton.disabled = false;
             UI.downloadModelsButton.disabled = false;
+            UI.actionReplayButton.disabled = false;
         }
         else if(this.user == "player") {
             player.user = "human";
@@ -230,6 +232,105 @@ function animate() {
     requestAnimationFrame(animate);
    
 }
+function actionReplay() {
+    Game.drawBG();
+    //ctx.clearRect(0,0,Game.width,Game.height);
+    let c1 = 0;
+    let startFlagged = true;
+    let alpha = 0.2;
+    let alphaCount = 0;
+    let alphaMult = 1;                                    
+    let alphaBase = Math.floor(agent.maxStepCount / 9); // 7, 14, 21, 28 , 35 , 42 , 49 , 56+ (*9, 1.0 alpha)
+    let civLoc = 0;
+    let agentLoc = 0;
+    Game.running = true;
+
+   function animateReplay() {
+    if (!Game.running) {console.info("Replay Stopped");return}
+    ctx.clearRect(0,0,Game.width,Game.height);
+    let moveX = (Game.agentMoves[agentLoc][0]);
+    let moveY = (Game.agentMoves[agentLoc][1]);
+    let terminalFlag = (Game.agentMoves[agentLoc][2]);
+    
+    let r,g,b;
+    if (startFlagged) {
+        alpha = 0.2;
+        alphaCount = 0;
+        alphaMult = 1;
+        startFlagged = false;
+
+        if (Game.civilianMoves.length > 0){
+            civ1.x = Game.civilianMoves[civLoc][0] - (civ1.width / 2);
+            civ1.y = Game.civilianMoves[civLoc][1] - (civ1.height / 2);
+            
+        }
+    }
+    civ1.draw();
+
+    if (c1 > 5) {c1 = 0}
+
+    switch(c1){
+        case 0: r = 255; g = 0; b = 0 // red
+        break;
+        case 1: r = 0; g = 255; b = 0 // green
+        break;    
+        case 2: r = 0; g = 0; b = 255 // blue
+        break;  
+        case 3: r = 255; g = 128; b = 0 // orange
+        break; 
+        case 4: r = 255; g = 0; b = 255 // pink
+        break; 
+        case 5: r = 0; g = 255; b = 255 // cyan
+        break; 
+      }
+      
+    // adding transparency to the dots
+    if ((alphaMult < 9) && (alphaCount > alphaBase * alphaMult)) { // 1:.2, 2:.3, 3:.4, 4:.5, 5:.6, 6:.7, 7:.8, 8:.9, 9:1.0,
+        alpha += 0.1;
+        alphaMult++
+    }  
+    let rgba = `rgba(${r},${g},${b},${alpha})`;
+    let rgb = `rgba(${r},${g},${b})`;
+
+    alphaCount++
+    // Agent movement path (background canvas)
+    ctxBG.beginPath();
+    ctxBG.arc(moveX, moveY, 2, 0, 2 * Math.PI);
+    ctxBG.fillStyle = rgba;
+    ctxBG.fill();
+
+    player.x = (Game.agentMoves[agentLoc][0]) - (player.width / 2);  // getting the top left corner
+    player.y = (Game.agentMoves[agentLoc][1]) - (player.height / 2); // coords are center unless refrencing object
+    player.draw();
+
+    if (terminalFlag) {
+        startFlagged = true;
+
+        if (Game.civilianMoves.length > 0){
+            let civMarkX = (Game.civilianMoves[civLoc][0]);
+            let civMarkY = (Game.civilianMoves[civLoc][1]);
+            // Civilian x,y marker (background canvas)
+            ctxBG.save();
+            ctxBG.beginPath();
+            ctxBG.arc(civMarkX, civMarkY, 5, 0, 2 * Math.PI);
+            ctxBG.strokeStyle = rgb;
+            ctxBG.lineWidth = 2;
+            ctxBG.stroke();
+            ctxBG.restore();
+        }
+
+        c1++;
+        if ((Game.civilianMoves.length > 0) && (civLoc < Game.civilianMoves.length - 1)) {
+            civLoc++
+        }
+    }
+    agentLoc++
+    if (agentLoc > Game.agentMoves.length - 1) {Game.running = false}
+    requestAnimationFrame(animateReplay);
+   }
+   animateReplay();
+}
+
 function animateAgent() {
     //let checkbox = document.getElementById("pathsCheckbox");
     if (!UI.pathsCheckbox.checked) {Game.drawBG();}
@@ -288,12 +389,8 @@ function animateAgent() {
         alpha += 0.1;
         alphaMult++
     }
-     // if (alphaCount > (alphaBase * alphaMult)) {alpha += 0.2;}
-     // if (alphaCount > (alphaBase * 3)) {alpha += 0.2;}
-     // if (alphaCount > (alphaBase * 4)) {alpha += 0.2;}
       
     let rgba = `rgba(${r},${g},${b},${alpha})`;
-    
 
     alphaCount++
     // Agent movement
@@ -316,6 +413,7 @@ function animateAgent() {
     animateCivilian(civColors);
 
 }
+
 function animateCivilian(civColors) {
     let start = 0;
     let max = 15;
@@ -324,16 +422,12 @@ function animateCivilian(civColors) {
     }
 
     for (let i = start; i < Game.civilianMoves.length; i++) {
-        let moveX = (Game.civilianMoves[i][0]);
-        let moveY = (Game.civilianMoves[i][1]);
-       // let r = 50 + (Math.ceil(Math.random() * 205));
-       // let g = 50 + (Math.ceil(Math.random() * 205));
-       // let b = 50 + (Math.ceil(Math.random() * 205));
-       // let rgb = `rgb(${r},${g},${b})`;
-
+        let civMarkX = (Game.civilianMoves[i][0]);
+        let civMarkY = (Game.civilianMoves[i][1]);
+     
         ctxBG.save();
         ctxBG.beginPath();
-        ctxBG.arc(moveX, moveY, 5, 0, 2 * Math.PI);
+        ctxBG.arc(civMarkX, civMarkY, 5, 0, 2 * Math.PI);
         ctxBG.strokeStyle = civColors[i];
         ctxBG.lineWidth = 2;
         ctxBG.stroke();
@@ -342,8 +436,7 @@ function animateCivilian(civColors) {
     const os = observationSpace;
     civ1.x = (os.civCoords[0]) - (civ1.width / 2);  // get top left corner
     civ1.y = (os.civCoords[1]) - (civ1.height / 2);
-    //civ1.x = (Game.civilianMoves[Game.civilianMoves.length -1][0]) - (civ1.width / 2);  // getting the top left corner
-    //civ1.y = (Game.civilianMoves[Game.civilianMoves.length -1][1]) - (civ1.height / 2); // array values are centered
+   
     civ1.draw()
 }
 // map width: 600,
@@ -354,8 +447,6 @@ function animateCivilian(civColors) {
 function loadEnts() {
 Game.entities.push(player = new Player(++Game.entityCounter, 150, 150, "TD3")); // init values
 Game.entities.push(civ1 = new Civilian(++Game.entityCounter, 400, 200));
-//Game.entities.push(new Zombie(++Game.entityCounter,10,10));
-//zombies.push(new Zombie(++game.entityCounter,300,300,"medium"));
 }
 
 Game.init();
