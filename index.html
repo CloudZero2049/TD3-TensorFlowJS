@@ -28,7 +28,7 @@ canvas {position: absolute;
 
 #infoDiv {position: absolute;
             top: 10px;
-            left: 700px;
+            left: 600px;
             z-index: 3;
         }
 span {
@@ -99,10 +99,12 @@ span {
   </br>
 
 <div id="buttonsDiv">
-    <button id="startPlayerButton" onclick="Game.start(`player`);" disabled="true">Start Player</button>
+   <!-- <button id="startPlayerButton" onclick="Game.start(`player`);" disabled="true">Start Player</button>-->
     <button id="startTD3Button" onclick="Game.start(`TD3`);" disabled="true">Start TD3 AI</button>
+    <button id="actionReplayButton" onclick="actionReplay();" disabled="true">Action Replay</button>
     <input type="checkbox" id="pathsCheckbox" name="pathsCheckbox" />
     <label for="pathsCheckbox">Keep Agent Paths?</label>
+    
     
 </div>
 <div class="slidecontainer">
