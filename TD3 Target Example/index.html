@@ -1,0 +1,263 @@
+<!DOCTYPE HTML>
+<html lang="us">
+<head>
+<meta charset="UTF-8">
+<title>TD3 AI: Find Target</title>
+
+<style rel="stylesheet" type="text/css">
+
+body { overflow: visible;
+}
+
+* {user-select: none;outline-style: none;}
+
+#canvasDiv {position: absolute;
+            left: 0;
+            top: 0;
+            z-index: 1;
+            }
+canvas {position: absolute;
+        border:5px solid #ffa700;
+        
+        z-index: 1;
+        }
+#mycanvas {background: transparent;
+            z-index: 2;
+            }
+#bgcanvas {z-index: 1;}
+
+#infoDiv {position: absolute;
+            top: 10px;
+            left: 600px;
+            z-index: 3;
+        }
+span {
+  display:inline-block;
+  margin-right:15px;
+}
+
+
+#buttonsDiv {position: relative;
+    top: 0px;
+    left: 0px;
+    z-index: 3;
+}
+.slidecontainer {
+    position: relative;
+    top: 20px;
+    left: 0px;
+    z-index: 3;
+     /*width: 100%; Width of the outside container */
+}
+
+/* The slider itself */
+.slider {
+  -webkit-appearance: none;  /* Override default CSS styles */
+  appearance: none;
+  width: 300px; /* Full-width */
+  height: 10px; /* Specified height */
+  background: #d3d3d3; /* Grey background */
+  outline: none; /* Remove outline */
+  
+}
+
+/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none; /* Override default look */
+  appearance: none;
+  width: 15px; /* Set a specific slider handle width */
+  height: 10px; /* Slider handle height */
+  background: #04AA6D; /* Green background */
+  cursor: pointer; /* Cursor on hover */
+}
+
+.slider::-moz-range-thumb {
+  width: 15px; /* Set a specific slider handle width */
+  height: 10px; /* Slider handle height */
+  background: #04AA6D; /* Green background */
+  cursor: pointer; /* Cursor on hover */
+}
+
+</style>
+
+  <!-- Import TensorFlow.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+  <!-- Import tfjs-vis -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.0.2/dist/tfjs-vis.umd.min.js"></script>
+</head>
+    
+<body>
+<div id="canvasDiv">
+<canvas id="bgCanvas"></canvas>
+<canvas id="myCanvas"></canvas>
+</div>
+
+<div id="infoDiv">
+  
+  <span id="agentWins" style="color:rgb(0, 190, 6)">Times Won: 0</span>
+  <span id="episodesRan" style="color:rgb(38, 0, 229)">Episodes Ran: 0</span>
+  </br>
+
+<div id="buttonsDiv">
+   <!-- <button id="startPlayerButton" onclick="Game.start(`player`);" disabled="true">Start Player</button>-->
+    <button id="startTD3Button" onclick="Game.start(`TD3`);" disabled="true">Start TD3 AI</button>
+    <button id="actionReplayButton" onclick="actionReplay();" disabled="true">Action Replay</button>
+    <input type="checkbox" id="pathsCheckbox" name="pathsCheckbox" />
+    <label for="pathsCheckbox">Keep Agent Paths?</label>
+    
+    
+</div>
+<div class="slidecontainer">
+    <input type="range" min="1" max="1000" value="5" class="slider" id="episodeRange">
+    <label for="episodeRange" id="episodeInfo">Episodes: 5</label></br>
+  
+    <input type="range" min="1" max="500" value="64" class="slider" id="stepRange">
+    <label for="stepRange" id="stepInfo">Steps: 64</label></br>
+
+    <input type="checkbox" id="randAgentCheckbox" name="randAgentCheckbox" />
+    <label for="randAgentCheckbox">Random Agent Location?</label>
+    <input type="checkbox" id="randCivCheckbox" name="randCivCheckbox" />
+    <label for="randCivCheckbox">Random Civilian Location?</label></br>
+
+    <input type="range" min="10" max="570" value="150" class="slider" id="agentRangeX">
+    <label for="agentRangeX" id="aRangeInfoX">Agent Start X: 150</label></br>
+   
+    <input type="range" min="10" max="470" value="150" class="slider" id="agentRangeY">
+    <label for="agentRangeY" id="aRangeInfoY">Agent Start Y: 150</label></br>
+   
+    <input type="range" min="10" max="570" value="400" class="slider" id="civRangeX">
+    <label for="civRangeX" id="cRangeInfoX">Civilian Start X: 400</label></br>
+    
+    <input type="range" min="10" max="470" value="200" class="slider" id="civRangeY">
+    <label for="civRangeY" id="cRangeInfoY">Civilian Start Y: 200</label></br></br>
+    
+    
+  </div>
+ <p style="color:red">You can use left and right arrows after clicking a slider for fine tuning</p>
+
+ <div id="saveLoadDiv">
+  
+ 
+  <p>Select actor_main model files to load (.json and .weights.bin)</p>
+  <input type="file" id="modelsInput" multiple="true" accept=".json, .bin" />
+  <p style="color:rgb(218, 10, 10)" id="modelsLoadedInfo">Models Loaded: None</p>
+  
+  
+</div>
+</div>
+
+<script src="Classes.js"> </script>
+<script src="game.js"></script>
+<script src="TD3script.js"></script>
+<script src="keyboardControl.js"> </script>
+<script>
+    
+    let episodeOutput = document.getElementById("episodeInfo");
+    episodeOutput.innerHTML = `Episodes: ${UI.episodeSlider.value}`; // Display the default slider value
+
+    let stepOutput = document.getElementById("stepInfo");
+    stepOutput.innerHTML = `Steps: ${UI.stepSlider.value}`;
+
+    let aOutputX = document.getElementById("aRangeInfoX");
+    aOutputX.innerHTML = `Agent Start X: ${UI.aSliderX.value}`;
+
+    let aOutputY = document.getElementById("aRangeInfoY");
+    aOutputY.innerHTML = `Agent Start Y: ${UI.aSliderY.value}`;
+
+    let cOutputX = document.getElementById("cRangeInfoX");
+    cOutputX.innerHTML = `Civilian Start X: ${UI.cSliderX.value}`;
+
+    let cOutputY = document.getElementById("cRangeInfoY");
+    cOutputY.innerHTML = `Civilian Start Y: ${UI.cSliderY.value}`;
+
+    UI.episodeSlider.oninput = function() {
+      episodeOutput.innerHTML = `Episodes: ${this.value}`;
+    }
+    UI.stepSlider.oninput = function() {
+      stepOutput.innerHTML = `Steps: ${this.value}`;
+    }
+  
+    UI.randAgentCheckbox.oninput = function() {
+      if (randAgentCheckbox.checked) {
+        UI.aSliderX.hidden = true;
+        UI.aSliderY.hidden = true;
+        UI.aRangeInfoX.hidden = true;
+        UI.aRangeInfoY.hidden = true;
+        
+      }
+      else {
+        UI.aSliderX.hidden = false;
+        UI.aSliderY.hidden = false;
+        UI.aRangeInfoX.hidden = false;
+        UI.aRangeInfoY.hidden = false;
+      }
+    }
+    UI.randCivCheckbox.oninput = function() {
+      if (randCivCheckbox.checked) {
+        UI.cSliderX.hidden = true;
+        UI.cSliderY.hidden = true;
+        UI.cRangeInfoX.hidden = true;
+        UI.cRangeInfoY.hidden = true;
+        
+      }
+      else {
+        UI.cSliderX.hidden = false;
+        UI.cSliderY.hidden = false;
+        UI.cRangeInfoX.hidden = false;
+        UI.cRangeInfoY.hidden = false;
+      }
+    }
+    UI.aSliderX.oninput = function() {
+      let x = parseInt(this.value) + player.width / 2;
+      aOutputX.innerHTML = `Agent Start X: ${x}`;
+      player.x = parseInt(this.value);
+      Game.redrawInit();
+    }
+    UI.aSliderY.oninput = function() {
+      let y = parseInt(this.value) + player.height / 2;
+      aOutputY.innerHTML = `Agent Start Y: ${y}`;
+      player.y = parseInt(this.value);
+      Game.redrawInit();
+    }
+    UI.cSliderX.oninput = function() {
+      let x = parseInt(this.value) + civ1.width / 2;
+      cOutputX.innerHTML = `Civilian Start X: ${x}`;
+      civ1.x = parseInt(this.value);
+      Game.redrawInit();
+    }
+    UI.cSliderY.oninput = function() {
+      let y = parseInt(this.value) + civ1.height / 2;
+      cOutputY.innerHTML = `Civilian Start Y: ${y}`;
+      civ1.y = parseInt(this.value);
+      Game.redrawInit();
+    }
+   
+    const modelsInput = document.getElementById('modelsInput');
+    modelsInput.addEventListener('change', checkModel);
+    function checkModel() {
+      try {
+        const file1 = modelsInput.files[0];
+        const file2 = modelsInput.files[1];
+        
+        if (file1 && file2){
+          for (i=0; i < modelsInput.files.length; i++) {
+            if ((modelsInput.files[i].type !== `application/octet-stream`) && (modelsInput.files[i].type !== `application/json`)) {
+              throw "A model file is wrong type. Expected JSON or octet-stream (.bin)";
+              return
+            }
+          }
+          
+          agent.loadModels(modelsInput.files);
+        }
+        else {throw "Minimum 2 files required: JSON and .bin"}
+      } catch (error) {
+        console.log(`Unable to load files: ${error}`)
+      }
+    }
+    
+
+</script>
+</body>
+
+</html>
+
