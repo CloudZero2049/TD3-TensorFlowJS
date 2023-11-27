@@ -1,0 +1,9 @@
+1) These files only contain the necissary information for the example.
+2) You must manualy load the actor_main-model.json and actor_main-model.weights.bin files (also found in this directory) using the "choose files" button.
+3) There is no training happening here, the only model present is the agent_main that uses the pre-trained model data.
+4) This model was trained to 400 steps using a batch/step size of 64 (the rest of the info is as seen in the TD3Script), using random spawns for the agent and civilian
+5) TO USE: 
+  Step 1) Chose your starting settings. 
+  Step 2) click "Start TD3 AI". You can open the developer console to see progress. 
+    (in Google Chrome: top right 3 dots --> "More tools" --> "Developer Tools" --> Console tab) After it is complete the paths of the agent will be shown. 
+  Step 3) click the "Action Replay" button for an animation of the agents movement.
