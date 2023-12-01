@@ -3,6 +3,8 @@ I did this because it turns out it's really difficult to get AI to run in a circ
 touching the zombie is a terminal condition that ends the episode and would be more rewarding than sitting on a wall)
 2) 50 episodes of neer-perfect player controled actions were recorded straight to memory
 3) next, the entire system was directly trained on those 50 episodes. The agent quickly learned that making circular movements was the way to go.
-4) and finaly, the system was trained like normal for 500 episodes until the agent could survive for 256 steps most of the time (90% +). I tested an episode of 1000 steps just before uploading and the agent survived.
+4) and finaly, the system was trained like normal for 450 episodes until the agent could survive for 256 steps most of the time (90% +). I tested an episode of 1000 steps just before uploading and the agent survived.
   4a) I lowered gamma (the discount / exploration factor) to 0.25 at 325 episodes.
   5a) I lowered gamma further to 0.1 at 400 episodes.
+
+NOTE: I had to use the memory from 400 episodes because I didn't realize theres a 25MB limit to files size. My bad. The model data is still good though.
