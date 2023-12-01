@@ -1,0 +1,31 @@
+[CURENT WORK] Version 0.03
+
+1) Two mini-projects have been completed: Find Target and Run From Zombie. Each will be found in their respective folders.
+
+2) Next I might place two agents toghether, causing one to run from the other.
+
+
+[MAJOR CHANGE LOG]
+[11/17/23] : Memory upload/download implemented
+
+[11/20/23] : Model upload/download implemented
+
+[11/25/23] : Action Replay implemented
+
+[11/25/23] 
+1) "Find Target" version 0.02 complete.
+2) version 0.03 and work on "Run From Zombie" Started.
+
+[11/28/23]
+
+1) reduced agents actions back down to 2 actions [moveX, moveY].
+
+2) Created a "Train From Memory" button. This directly trains the agent "episodes" number of times. The agent does not act.
+
+3) created a new method of training. The "Record User Actions" will store user input and states into the memory buffer. Then, you can use the "Train From Memory" 
+  button to directly train the agent from the memory (agent does not act).
+
+[11/30/23] 
+1) "Run From Zombie" version 0.03 complete.
+
+2) Re-organized GitHub project directories so that each mini-project can have it's own folder.
