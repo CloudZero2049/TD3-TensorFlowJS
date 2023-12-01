@@ -1,0 +1,8 @@
+1) This series of models was trained using a hybrid method of player input to help the agent learn the general method to use when running from the zombie. 
+I did this because it turns out it's really difficult to get AI to run in a circle when being chased by something, even when giving a penalty for touching walls (which itself is hard to implement because 
+touching the zombie is a terminal condition that ends the episode and would be more rewarding than sitting on a wall)
+2) 50 episodes of neer-perfect player controled actions were recorded straight to memory
+3) next, the entire system was directly trained on those 50 episodes. The agent quickly learned that making circular movements was the way to go.
+4) and finaly, the system was trained like normal for 500 episodes until the agent could survive for 256 steps most of the time (90% +). I tested an episode of 1000 steps just before uploading and the agent survived.
+  4a) I lowered gamma (the discount / exploration factor) to 0.25 at 325 episodes.
+  5a) I lowered gamma further to 0.1 at 400 episodes.
