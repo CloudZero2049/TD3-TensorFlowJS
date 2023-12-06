@@ -32,7 +32,7 @@ function simulateEnvStep(action, currentStep) {
     if(player.sensor){
       player.sensor.update(Game.mapBorders,[zom1]); // hardcoded zombie
       const offsets = player.sensor.readings.map(
-          s=>s==null?-1:1-s.offset
+          s=>s==null?1: -(1-s.offset)
       );
       for (let i = 0; i < offsets.length; i++){
         osNS[0][i+6] = offsets[i];
@@ -93,7 +93,7 @@ function simulateEnvStep(action, currentStep) {
     
     let zomDist = utilsAI.distance(OS.agentCoords[0], OS.agentCoords[1], OS.zomCoords[0], OS.zomCoords[1]);
     let zomAngle = utilsAI.angle([OS.agentCoords[0], OS.agentCoords[1]], [OS.zomCoords[0], OS.zomCoords[1]]); 
-  
+    /*
     let distancePenalty = zomDist; 
         
     let distancePenaltyScaling = observationSpace.xyNorm; // [0, 1] xyNorm is hardcoded 0.002 based on map size
@@ -102,44 +102,60 @@ function simulateEnvStep(action, currentStep) {
     invDistPenalty /= 2; // [-0.5, 0] // share space
     
     penalty += invDistPenalty;
-  
+    */
+    
+
+    const safeDistance = 90; // 110 is ray length
+    //const survivalBonus = 0.1;
     function calculateTimeBonus(step, maxSteps) {
-        const minBonus = 0.1; // step 0
-        const maxBonus = 1;   // maxSteps
-        const timeRatio = step / maxSteps;
-        const timeBonus = minBonus + (maxBonus - minBonus) * timeRatio;
-        return timeBonus;
+      const minBonus = 0.1; // step 0
+      const maxBonus = 1;   // maxSteps
+      const timeRatio = step / maxSteps;
+      const timeBonus = minBonus + (maxBonus - minBonus) * timeRatio;
+      return timeBonus;
     }
+
+    if (zomDist > safeDistance){ 
+      let timeBonus = calculateTimeBonus(currentStep, agent.maxStepCount);
+      reward += timeBonus; 
+    }
+    else{ penalty += 2 * (safeDistance - zomDist) / safeDistance}
     //console.log(`Distance Penalty: ${distancePenalty}`);
     //console.log(`Inverted Distance Penalty: ${invDistPenalty}`);
     //console.log(`Angle Penalty: ${anglePenalty}`);
     //console.log(`total Reward: ${totalReward}`);
+
     OS.rawDist = zomDist;
     OS.rawAngle = zomAngle;
     osNS[0][LN.dist] = zomDist * OS.xyNorm;
     osNS[0][LN.angle] = (zomAngle + Math.PI) / (2 * Math.PI);
   
-    const timeBonus = calculateTimeBonus(currentStep, agent.maxStepCount);
-    reward += timeBonus;
+   // const timeBonus = calculateTimeBonus(currentStep, agent.maxStepCount);
+    //reward += timeBonus;
     
-    if (penalty > 1) {penalty = 1} // failsafe
-    if (reward > 1) {reward = 1} // failsafe
+    //if (penalty > 1) {penalty = 1} // failsafe
+    //if (reward > 1) {reward = 1} // failsafe
     
-    reward = reward - penalty;
-   
     if (hitWall) { // huge penalty for walking into walls
-      reward = -1; // walking into walls is bad
+   
+      penalty += 5; // walking into walls is bad
+      
     } 
-    if (zomDist <= player.width) {
-      reward = -1; 
-      console.log(`Zombie found user on step: ${currentStep}`);
+    if (zomDist <= player.width) { // If zombie finds agent, is very bad
+      penalty += 10; 
+      //console.log(`Zombie found agent on step: ${currentStep}`);
+      //Game.agentWins++;
+      //UI.agentWins.innerHTML = `Times Won: ${Game.agentWins}`;
       isDone = true;
     }
     else if (currentStep >= agent.maxStepCount) {
-      reward = 1;
+      reward += 10;
+      console.warn("AGENT SURVIVED!"); // If the zombie hasn't reached the player then the agent survives, max point
+      Game.agentWins++;
+      UI.agentWins.innerHTML = `Times Won: ${Game.agentWins}`;
       isDone = true;
     }
-    //console.log(`final reward: ${reward}`);
+    reward = reward - penalty;
     
     const next_state = JSON.parse(JSON.stringify(observationSpace.next_stateSpace));
     //console.log(next_State);
