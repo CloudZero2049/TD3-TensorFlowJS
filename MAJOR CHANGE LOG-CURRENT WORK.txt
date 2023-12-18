@@ -2,7 +2,7 @@
 
 1) Two mini-projects have been completed: Find Target and Run From Zombie. Each will be found in their respective folders.
 
-2) [General Work Update 12/18/23]: I've been hard at work trying to optimize the "Run From Zombie" setup. I've gotten some models to 70% efficiency but there is some sort of NaN error happening over time and I'm narrowing down the issue. I want a 90%+ success rate with the current setup that includes sensors. My goal is to make something that can be generalized to a bigger play area with more enemies before moving on.
+2) [General Work Update 12/18/23]: I've been hard at work trying to optimize the "Run From Zombie" setup. I've gotten some models to 70% efficiency but there is some sort of NaN error happening over time and I'm narrowing down the issue. I want a 90%+ success rate with the current setup that includes sensors. My goal is to make something that can be generalized to a bigger play area with more enemies before moving on to the next project step.
 
 
 [MAJOR CHANGE LOG]
