@@ -29,3 +29,7 @@
 1) "Run From Zombie" version 0.03 complete.
 
 2) Re-organized GitHub project directories so that each mini-project can have it's own folder.
+
+[12/21/23]
+1) I added a "Test Agent" button that will test the actor_main model (without training or saving to memory).
+2) Because of the "Test Agent" button I can now include trained actor_main model data files in the build folders to be used as examples.
