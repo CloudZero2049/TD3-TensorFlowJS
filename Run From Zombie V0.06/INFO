@@ -1,3 +1,0 @@
-I am currently finetuning the Run From Zombie setup. I've been messing with hyper-peramiters a lot so some values may be unexpected. 
-I'm also trying to track down a NaN propigation issue that sometimes happens, mostly after a large amount of training (usually after 1,000 episodes with 256 steps). 
-This is where it is at currently.
