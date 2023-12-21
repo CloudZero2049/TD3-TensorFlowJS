@@ -178,7 +178,7 @@ class Actor {
 //Phil: batch_size = 300, warmup = 1000, n_games 1000
 //n_actions = 2, cInputShape = 9, alpha = 0.001, beta = 0.002, gamma = 0.99, tau = 0.005, warmup = 50, RBufferSize = 100000
 class Agent {
-  constructor(n_actions = 2, inputShapeA = 28, inputShapeC = 30, alpha = 0.0005, beta = 0.0006, gamma = 0.50, tau = 0.005, warmup = 128, RBufferSize = 100000) {                           
+  constructor(n_actions = 2, inputShapeA = 28, inputShapeC = 30, alpha = 0.0005, beta = 0.0006, gamma = 0.99, tau = 0.005, warmup = 128, RBufferSize = 100000) {                           
     this.actor_main = new Actor(n_actions,inputShapeA);
     this.actor_target = new Actor(n_actions,inputShapeA);
     this.critic_main = new Critic(inputShapeC);
@@ -464,20 +464,20 @@ return returnValue;
   async downloadModels() {
     try {
       async function dlGroup1() {
-      await agent.actor_main.model.save('downloads://actor_main-model');
-      await agent.actor_target.model.save('downloads://actor_target-model');
-      await agent.critic_main.model.save('downloads://critic_main-model');
+        await agent.actor_main.model.save('downloads://actor_main-model');
+        await agent.actor_target.model.save('downloads://actor_target-model');
+      
       }
       async function dlGroup2() {
-      await agent.critic_target.model.save('downloads://critic_target-model');
-      await agent.critic_main2.model.save('downloads://critic_main2-model');
+        await agent.critic_main.model.save('downloads://critic_main-model');
+        await agent.critic_target.model.save('downloads://critic_target-model');
+        await agent.critic_main2.model.save('downloads://critic_main2-model');
+        await agent.critic_target2.model.save('downloads://critic_target2-model');
       }
       
       await dlGroup1();
       await dlGroup2();
-      await agent.critic_target2.model.save('downloads://critic_target2-model');
-      //await agent.critic_target2.model.save('critic_target2-model');
-
+      
       
       } catch (error) {
         console.error(`Error downloading models: ${error}`);
@@ -669,8 +669,15 @@ return returnValue;
         }
         break;     
       }
-      UI.modelsLoadedInfo.innerHTML = `Models Loaded: ${agent.loadedFiles}`;
-      UI.modelsLoadedInfo.style="color:rgb(10, 218, 10)";
+      if (agent.loadedFiles.length > 0){
+        let modelString = `Models Loaded:`;
+        for (let file of agent.loadedFiles) {
+          let index = agent.loadedFiles.indexOf(file);
+          modelString = modelString + ` ` + `[${index + 1}]` + file + `,`;
+        }
+        UI.modelsLoadedInfo.innerHTML = modelString;
+        UI.modelsLoadedInfo.style="color:rgb(10, 218, 10)";
+    }
       
     } // end i loop
     } catch (error) {
@@ -1010,16 +1017,17 @@ else {
   }
   */
  
-  //if (hitWall) { // huge penalty for walking into walls
+  if (hitWall) { // huge penalty for walking into walls
    
-   // penalty += 1; // walking into walls is bad
+    penalty += 2; // walking into walls is bad
+    if (!Game.testing){isDone = true;}
     
-  //} 
+  } 
   if (penalty > 2) {penalty = 2} // failsafe
   if (reward > 2) {reward = 2} // failsafe
   reward = reward - penalty;
 
-  if (zomDist <= player.width || hitWall) { // If zombie finds agent, is very bad // added hitwall
+  if (zomDist <= player.width) { // If zombie finds agent, is very bad // added hitwall
     reward = -2; 
     //console.log(`Zombie found agent on step: ${currentStep}`);
     isDone = true;
@@ -1057,14 +1065,14 @@ let episodes = 5;
 const epReward = [];
 const totalAvgReward = [];
 
-function main(epNum,stepSize,batchSize,warmupSteps) {
+function main(epNum,stepSize,batchSize,warmupSteps,gamma) {
   console.log("TD3 Started");
   let target = false;
   if (epNum && !isNaN(epNum) && epNum > 0) {episodes = epNum}
   if (stepSize && !isNaN(stepSize) && stepSize > 0) {agent.maxStepCount = stepSize}
   if (batchSize && !isNaN(batchSize) && batchSize > 0) {agent.batch_size = batchSize}
   if (warmupSteps && !isNaN(warmupSteps) && warmupSteps > 0) {agent.warmup = warmupSteps}
-  
+  if (gamma && !isNaN(gamma) && gamma >= 0) {agent.gamma = parseFloat(gamma)}
   //observationSpace.initUpdate();
 
   for (let s = 0; s < episodes; s++) {
@@ -1141,8 +1149,10 @@ function main(epNum,stepSize,batchSize,warmupSteps) {
         //  target = true;
         //}
         done = true;
-        Game.episodesRan++;
-        UI.episodesRan.innerHTML = `Episodes Ran: ${Game.episodesRan}`;
+        if (!Game.testing){
+          Game.episodesRan++;
+          UI.episodesRan.innerHTML = `Episodes Ran: ${Game.episodesRan}`;
+        }
         
       }
     }
