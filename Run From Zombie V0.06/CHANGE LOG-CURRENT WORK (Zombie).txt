@@ -1,0 +1,153 @@
+[CURENT WORK] Version 0.04 . Run Rom Zombie 2
+
+1) See the change log for the "Find Target" program for changes before version 0.03
+
+2) check your downloaded model files to make sure they all downloaded.
+
+
+[CHANGE LOG]
+
+[11/25/23]
+
+1) Added zombie related information (some of which were just renaming civilian code);
+
+2) fixed a lot of drawing coordinate issues.
+
+3) fixed slider x range
+
+[11/27/23]
+
+1) increased gamma back up to 0.99
+
+2) steps and warmup defaults have all been increased to match the objective of a long-term survival.
+
+	2a) Steps to: 256
+	2b) Warmup to: 128
+
+3) Batch size
+
+4) added "Replay Complete" console messages.
+
+5) added "Training Started" console message.
+
+[11/28/23]
+
+1) reduced agents actions back down to 2 actions [moveX, moveY]. I'm worried that taking the absolute value of the second pair for speed (ultimately the movement itself) was interfering with learning.
+
+2) Created a "Train From Memory" button. This directly trains the agent "episodes" number of times. The agent does not act.
+
+3) created a new method of training. The "Record User Actions" will store user input and states into the memory buffer. Then, you can use the "Train From Memory" button to directly train the agent from the memory (agent does not act).
+
+[11/30/23]
+
+1) first hybrid model training complete
+
+[12/2/23]
+
+1) updated initial state refresh
+
+[12/3/23]
+
+1) Added sensors so the agent can more easily see what is around it.
+
+[12/5/23]
+
+1) Added "Wins This Run" info to UI
+
+2) default steps lowered to 192.
+
+3) training the agent from memory now uses the steps slider too and not just episodes (It's like normal now).
+
+4) Zombie movement path is turned off by default. The code is commented out in animateAgent() (game.js)
+
+[12/7/2023]
+
+1) Fixed sensor logic placement in envStep
+
+2) added a type to "getIntersection" utility function so sensors can know what they are detecting
+
+3) sensors can now differentiate between passive objects like walls (0 to1), and agressive objects like zombies (0 to -1).
+
+4) Added an "episodesTrained" counter to "train from memory";
+
+5) Now able to download models after training from memory.
+
+[12/8/23]
+
+1) fixed distance penalty not giving the right amounts
+
+2) Changed angle normalization to be between -1 and 1 (instead of 0 to 1);
+
+3) Increased maximum warmup steps to 5,000.
+
+4) Made various improvements to user-controlled training mechanism.
+
+[12/10/23]
+
+1) fixed memory overloading error (now has a memSize variable).
+
+2) fixed action memory saving with too many array layers.
+
+3) added batch size to the predict functions (they were defaulting to 32).
+
+4) Set the actors output layer kernalInitializer to 'glorotUniform' (uses tanh), and all other layers (that use ReLU) to 'heNormal'.
+
+5) reduced all decimal values by half (.toFixed(8)) to help reduce vanishing gradients. toFixed() converts numbers into strings so I had to use parseFloat() to convert them back into floating point numbers.
+
+[12/13/23]
+
+1) Some improvements made to weight updates while tracking down NaN propigation problem.
+
+[12/14/23]
+
+1) finaly realized that data wasn't being copied from memory properly in the "sample" method. Is fixed now.
+
+2) Split the save function into two save functions (activating internally) to try to help prevent model files from not saving correctly.
+
+[12/15/23]
+
+1) lowered default batch size to 32
+
+[12/16/23]
+
+1) moved updateTarget() to trigger at the same time as the agent_main updates (the original paper says to).
+
+2) fixed agent paths not showing the right amount, and is now set to last 25 episodes.
+
+[12/17/23]
+
+1) When loading memory the memory.cnt is now set to parsedData.cnt at the end of the load so that future saves will start where they left off.
+
+2) put in more copying and cloning to help prevent cross contamination of data.
+
+3) now making new array clones of the memories before saving.
+
+4) updated to version 0.06
+
+[12/18/23]
+
+1) In trying to generalize, removed zombie x,y coords and the angle from state space.
+
+2) state is now being copied from stateSpace instead of using a direct reference >_< (envReset()).
+
+[12/19/23]
+
+1) using toFixed() on values that don't need to be as accurate. Agent actions are 4, Agent x,y values are 4, Distance is 3, array distances are 3.
+
+2) using a new technique for agent location in state space because toFixed doesn't always work. By multiplying by a constant (in this case 10,000 for 4 decimal places), flooring the value, then dividing by the same constant we can chop off the extra float numbers.
+
+3) finaly realized and fixed agent location being stored from it's actions instead of it's new location.
+
+
+4) fixed player coords not being updated when agent is in control (the new ray sensors need it).
+
+[12/20/23]
+
+1) Added a Test button to test the agent without training it or saving the information to memory
+
+[Random Notes]
+Time to make adjustable play area? Is it too big to start?
+
+agent needs more memory or units I think
+
+is leakyRelu better than Relu?
