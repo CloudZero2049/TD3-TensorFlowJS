@@ -145,9 +145,12 @@
 
 1) Added a Test button to test the agent without training it or saving the information to memory
 
-[Random Notes]
-Time to make adjustable play area? Is it too big to start?
+[12/21/23]
 
-agent needs more memory or units I think
+1) gamma is now adjustable through the UI
+
+2) The walls will now only be a terminal state while training (not when using the "Test Agent" button).
+
+[Random Notes]
 
 is leakyRelu better than Relu?
