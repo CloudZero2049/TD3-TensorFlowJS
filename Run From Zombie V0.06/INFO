@@ -7,9 +7,11 @@
   2b) Starting values: alpha = 0.0004, beta = 0.0005, gamma = 0.90. 
   2c) after 400 episodes I realized that the agent was "wobbling." I'm certain that it was because it wouldn't be penalized if it was moving fast enough even if it was going
     towards the zombie. I fixed that by comparing its current and last known distance, and also wether it was moving fast enough away.
-  2d) hyper perameters changed after 1200 steps: alpha = 0.0005, beta = 0.0006, gamma = 0.97
-  2e) At 1700 steps with a 48% success rate I realized that the agent was doing what it was supposed to except it would run to an optimized policy area.
+  2d) hyper perameters changed after 1200 episodes: alpha = 0.0005, beta = 0.0006, gamma = 0.97
+  2e) At 1700 episodes with a 48% success rate I realized that the agent was doing what it was supposed to except it would run to an optimized policy area.
     It is at this point that I set the gamma (discount factor) to 0.50, and trained it for a simple 10 steps. It quickly converged on an optimal policy with a very high sucess rate (finally!).
-    This high success rate was tested with successfull solid 1,000 step runs (which basically means it can survive indefinetely). I will include it in the initial upload only because it's late, but I know I can get one that is better.
+    To top it off I trained it another 10 episodes (for a total of 1730 episodes) with a gamma of 0.40, reaching a 96% to 99% win rate.
+    This high success rate was also tested with successfull solid 1,000 step runs (which basically means it can survive indefinetely).
   2d) because of early reward error the agent still has a "wobble." It is quickly becoming a trademark of the first successfull build (not including the sub-optimal configuration of the older version) for 
-      Run From Zombie.
+      Run From Zombie. I will make one last attempt at a model without the wobble, and that will be it for this type of "Run From Zombie" model builds.
+  2e) (NOTE) Any depictions that appear from the path that the agent chooses to move in is purely coincidental and was not intended by the developer.
