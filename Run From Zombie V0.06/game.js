@@ -39,6 +39,7 @@ const UI = {
     stepSlider: document.getElementById("stepRange"),
     batchSlider: document.getElementById("batchRange"),
     warmupSlider: document.getElementById("warmupRange"),
+    gammaSlider: document.getElementById("gammaRange"),
     randAgentCheckbox: document.getElementById("randAgentCheckbox"),
     //randCivCheckbox: document.getElementById("randCivCheckbox"),
     randZomCheckbox: document.getElementById("randZomCheckbox"),
@@ -130,8 +131,9 @@ const Game = {
             const steps = UI.stepSlider.value;
             const batchSize = UI.batchSlider.value;
             const warmupSteps = UI.warmupSlider.value;
+            const gamma = UI.gammaSlider.value;
 
-            main(episodes,steps,batchSize,warmupSteps); // <-- TD3 script
+            main(episodes,steps,batchSize,warmupSteps,gamma); // <-- TD3 script
 
             console.info(tf.memory());
             console.info(`TD3 Complete. Gamma: ${agent.gamma}`);
