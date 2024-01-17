@@ -2,7 +2,7 @@
 
 1) Two mini-projects have been completed: Find Target and Run From Zombie. Each will be found in their respective folders.
 
-2) [General Work Update 12/18/23]: I've been hard at work trying to optimize the "Run From Zombie" setup. I've gotten some models to 70% efficiency but there is some sort of NaN error happening over time and I'm narrowing down the issue. I want a 90%+ success rate with the current setup that includes sensors. My goal is to make something that can be generalized to a bigger play area with more enemies before moving on to the next project step.
+2) [General Work Update 1/16/24]: I decided to upgrade the "Find Target" setup to version 0.06 before moving on to the next project. Durring this I realized something was wrong because it was much harder to train than it should have been based on the first sucess in the earlier version. I believe I narrowed down the culprit to haveing too many nodes in the hidden layers of the networks. I'm currently investigating this, but have had sucess lowering the number already.
 
 
 [MAJOR CHANGE LOG]
