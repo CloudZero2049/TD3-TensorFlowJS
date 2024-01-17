@@ -1,0 +1,25 @@
+[CURENT WORK] Version 0.06 . Find Target V6
+
+1) Trained using updated V-0.06 (first was V-0.03)
+
+2) This one isn't perfect, but I'm having sucess tinkering with hidden layer nodes.
+
+
+[CHANGE LOG]
+
+[1/6/24]
+
+1) removed distance from observation space
+2) removed all coords except the agent's from observation space (relying on the rays now).
+
+[1/15/24]
+
+3) removed rays detecting walls.
+
+4) increased memory buffer from 100k to 150k
+
+5) Lowered the hidden layer node count to 32 (down from 512...yah). This appears to have worked very well.
+
+[Random Notes]
+
+is leakyRelu better than Relu?
