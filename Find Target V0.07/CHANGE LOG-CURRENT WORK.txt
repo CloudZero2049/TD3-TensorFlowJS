@@ -1,0 +1,39 @@
+[CURENT WORK] Version 0.06 . Find Target V6
+
+1) Trained using updated V-0.06 (first was V-0.03)
+
+
+[CHANGE LOG]
+
+[1/6/24]
+
+1) removed distance from observation space
+2) removed all coords except the agent's from observation space (relying on the rays now).
+
+[1/15/24]
+
+3) removed rays detecting walls.
+
+4) increased memory buffer from 100k to 200k
+
+5) Lowered the hidden layer node count to 32 (down from 512...yah). This appears to have worked very well.
+
+[1/19/24]
+
+1) Added L2 kernel regularizers to models.
+
+2) Increaseing version to 0.07
+
+[1/23/24]
+
+1) reduced movement threshold from 0.15 to 0.
+
+[1/24/24]
+
+1) reduced tau from 0.005 to 0.0005
+
+2) hidden layer neuron count is set to 128 per layer.
+
+[Random Notes]
+
+is leakyRelu better than Relu?
