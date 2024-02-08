@@ -11,15 +11,15 @@
 5) The goal of this project is to create a working Twin Delayed Deep Deterministic Policy Gradient (TD3) (similar to DDPG), written in JavaScript with the only dependency being TensorFlow JS. It is meant to be a  blueprint that the community can use to create other projects with TensorFlow JS. The TD3 will use a simple environment containing an agent/player, and other entities such as a civilian or zombie. The environment is based on HTML5 Canvas. (x:0,y:0 in top left corner).
 	4a) The agent has at least 2 actions [move direction x, move direction y].
 
-	4b) The Observation Space has at least 2 array locations representing the x,y coordinates of the agent. It currently (and for the foreseeable future) has additional locations for "detection rays" that emit from the agent/player that show the distance to neerby object and entities (adjustable). Depending on the project, there might be more [[ax, ay, ray1, ray2, ray3, etc...]].
+	4b) The Observation Space has at least 2 array locations representing the x,y coordinates of the agent. It currently (and for the foreseeable future) has additional locations for "detection rays" that 	emit from the agent/player that show the distance to neerby object and entities (adjustable). Depending on the project, there might be more [[ax, ay, ray1, ray2, ray3, etc...]].
 
-	4c) The projects use intricate reward systems to ensure that the agent is getting valid feedback for training. At the moment their are some rewards/penalties that are completely disabled if no sensor rays detect anything in order to prevent contamination.
+	4c) The projects use intricate reward systems to ensure that the agent is getting valid feedback for training. At the moment their are some rewards/penalties that are completely disabled if no sensor rays 	detect anything in order to prevent contamination.
 
-	4d) Canvas animation is currently disabled when running TD3 (it would bog down training anyway). There is a visual representation that shows the paths the agent took after a run, and you can click the "Action Replay" button to see a full animation (after a run is finished). The 0 key will stop animation (good if there's looping errors tied to it).
+	4d) Canvas animation is currently disabled when running TD3 (it would bog down training anyway). There is a visual representation that shows the paths the agent took after a run, and you can click the 	"Action Replay" button to see a full animation (after a run is finished). The 0 key will stop animation (good if there's looping errors tied to it).
 
  	4e) (Version 0.03) You can now record user inputs directly into the memory buffer to assist training if you wish.
 
-   	4f) (Version 0.03) You can now train the agent directly from memory if you wish. This is much faster than going through the whole process and is usefull for when using user-generated memories (in moderation), otherwise it could have a negative effect on training because the agent isn't recording new actions.
+   	4f) (Version 0.03) You can now train the agent directly from memory if you wish. This is much faster than going through the whole process and is usefull for when using user-generated memories (in 		moderation), otherwise it could have a negative effect on training because the agent isn't recording new actions.
 
 
 6) This project began by using ChatGPT(v.3.5) to help me translate code from Python into JavaScript that utilizes TensorFlow JS. I could not find any examples of TD3 on the internet in JavaScript, this is the first for all I know..
