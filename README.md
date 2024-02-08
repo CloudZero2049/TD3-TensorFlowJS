@@ -1,19 +1,19 @@
 # TD3-TensorFlowJS
-1) This is a passion project and is a work in progress, by a single person, and therefore may not work as expected. It is currently in development using the Google Chrome web browser, other browser might not work (I haven't tested any). Check the "saved model data" folder for pre-trained models.
+1) This is a passion project and is a work in progress, by a single person, and therefore may not work as expected. It is currently in development using the Google Chrome web browser, other browser might not work (I haven't tested any). You can check the "saved model data" folder for pre-trained models for the earlier builds, otherwise I am now including pre-trained models in the build folders when they are satisfactory.
 
 2) I am creating this for the community, and therefore am hereby allowing anyone and everyone to use the code and information within for whatever (legal) purpose they desire (I'm using MIT License). I only ask that you give me / this repository (CloudZero2049) a shout-out if used in a project that is viewable to the community so that others can find it as well.
    
-3) This is a list of mini-projects associated with the over project and their descriptions.
-	3a) Find Target: The agent must find a civilian "target".  it is rewarded for finding it, and penalized for being too far away or touching a wall.
+3) This is a list of mini-projects as part of the whole and their descriptions.
+	3a) Find Target: The agent must find a civilian "target".  it is rewarded for reaching the civilian.
    
-	3b) Run From Zombie: A more complex project. The agent must run from a zombie in a limited area, forcing it to run in circles. It is rewarded based on how long it survives, and penalized if it touches the zombie or a wall.
+	3b) Run From Zombie: A more complex project. The agent must run from a zombie in a limited area, forcing it to run in large circles. It is rewarded based on how long it survives, and penalized if it 		touches the zombie.
 
-5) The goal of this project is to create a working Twin Delayed Deep Deterministic Policy Gradient (TD3) (similar to DDPG), written in JavaScript with the only dependency being TensorFlow JS. It is meant to be a simple blueprint that the community can use to create other projects with TensorFlow JS. The TD3 will use a simple environment containing an agent/player, and a civilian. The environment is based on HTML5 Canvas. (x:0,y:0 in top left corner).
-	4a) The agent has 2 actions [move direction x, move direction y].
+5) The goal of this project is to create a working Twin Delayed Deep Deterministic Policy Gradient (TD3) (similar to DDPG), written in JavaScript with the only dependency being TensorFlow JS. It is meant to be a  blueprint that the community can use to create other projects with TensorFlow JS. The TD3 will use a simple environment containing an agent/player, and other entities such as a civilian or zombie. The environment is based on HTML5 Canvas. (x:0,y:0 in top left corner).
+	4a) The agent has at least 2 actions [move direction x, move direction y].
 
-	4b) The Observation Space has 6 array locations representing the x,y coordinates of the agent and civilian or zombie, the distance of the agent from the civillian or zombie, and angle of agent to civilian or zombie. [[ax, ay, civx, civy, civ-distance, civ-angle]].
+	4b) The Observation Space has at least 2 array locations representing the x,y coordinates of the agent. It currently (and for the foreseeable future) has additional locations for "detection rays" that emit from the agent/player that show the distance to neerby object and entities (adjustable). Depending on the project, there might be more [[ax, ay, ray1, ray2, ray3, etc...]].
 
-	4c) Agent gets a dynamic penalty that shrinks or grows depending on how far it is to the civilian or zombie, and also the difference in angle between it's current angle to the civilian and the agent's heading (angle of last location to current location). The negative penalty is done to prevent positive reward exploitation. It also get's a penalty for hitting walls. It's only actual reward (positive) in "Find Target" is when it reaches the civilian. In "Run From Zombie" it is rewarded more the longer it survives.
+	4c) The projects use intricate reward systems to ensure that the agent is getting valid feedback for training. At the moment their are some rewards/penalties that are completely disabled if no sensor rays detect anything in order to prevent contamination.
 
 	4d) Canvas animation is currently disabled when running TD3 (it would bog down training anyway). There is a visual representation that shows the paths the agent took after a run, and you can click the "Action Replay" button to see a full animation (after a run is finished). The 0 key will stop animation (good if there's looping errors tied to it).
 
@@ -53,4 +53,4 @@
 
    	6n) Reward (Mis)Design For Autonomous Driving, https://arxiv.org/pdf/2104.13906.pdf
 
-8) About CloudZero (2023): I am a 32-year-old college student working towards an AA. My goal is to become a computer programmer of some sort. I have a deep interest in game design and artificial intelligence.
+8) About CloudZero (2023): I am a 32-year-old college student working towards an AA and thinking about a BA in Artifical Inteligence. My goal is to become a computer programmer of some sort. I have a deep interest in game design and artificial intelligence.
