@@ -1,8 +1,8 @@
 1) Find Target V0.07 was trained using rays to detect where the "target" civilian is.
-2) I've been fine tuning the model on this and got it to a 90% (90/100 wins) success rate at 1,000 episodes (trained actor model included in files). 
-3) The other 10% can mostly be atributed to the agent being too far from the target to get enough data.
-4) Before training the agent I recorded 200 episodes of human-controlled data into the memory (I did not use the "Train From Memory" button).
-5) Various training info:
+2) I've been fine tuning the model on this and got it to an average 99%-100% success rate after training about 2,000 episodes (trained actor model included in files). 
+3) I did not use user-trained memory for this model, it started with zero memories (I also did not use the "Train From Memory" button).
+4) Finding a good number of nodes for the hidden layers, setting the L2 regularizer to 0.1 and fine tuning the reward function had the biggest impact on success.
+4) Various training info:
   alpha = 0.0001 
   beta = 0.0002
   tau = 0.0005
@@ -11,5 +11,5 @@
   steps = 128
   batch_size = 64
   neurons per hidden layer: 128
-  kernelRegularizer: L2
-  Find-Target reward: +50
+  kernelRegularizer: L2: 0.1
+  Find-Target reward: +2
