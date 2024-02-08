@@ -1,6 +1,6 @@
-[CURENT WORK] Version 0.06 . Find Target V6
+[CURENT WORK] Version 0.07 . Find Target V7
 
-1) Trained using updated V-0.06 (first was V-0.03)
+1) Began with updated V-0.06 (first was V-0.03)
 
 
 [CHANGE LOG]
@@ -33,6 +33,32 @@
 1) reduced tau from 0.005 to 0.0005
 
 2) hidden layer neuron count is set to 128 per layer.
+
+[1/30/24]
+
+1) create a logLosses() function in utilsAI to table log the most recent loss values at end of all episodes.
+
+2) created a "decScale" variable within the Agent class that is used for clipping decimal values.
+
+3) rewards and penalties are only given if a sensor detects something. This might be risky but the alternative is the agen't being rewarded or penalized without feedback from sensors.
+
+4) increased sensor count to 45 up from 35. I'm doing this to reduce the chance of sensors missing the civilian when further away.
+
+[1/31/24]
+
+1) learning rates set to 0.0001, 0.0002, and 0.0005 (critic, actor, tau)
+
+2) increased max_memory size to 500,000
+
+[2/7/24]
+
+1) Started finetuning a model based on 128 hidden nodes. Setting L2 to 0.1 had the biggest impact for better performance.
+
+2) Finetuned reward function
+
+3) Finally, 99-100% sucess rate models!
+
+4) updating version to 0.08
 
 [Random Notes]
 
