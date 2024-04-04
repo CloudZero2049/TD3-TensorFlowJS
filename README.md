@@ -9,7 +9,7 @@
    
 	3b) Run From Zombie: A more complex project. The agent must run from a zombie in a limited area, forcing it to run in large circles. It is rewarded based on how long it survives, and penalized if it 		touches the zombie.
 
- 	3c) AI Plays Tag: A setup that allows trained models from (3a) and (3b) to face off in a game of tag.
+ 	3c) AI Plays Tag: A setup that allows trained models from (3a V0.07) and (3b V0.09) to face off in a game of tag.
 
    	3d) Attack Zombie: The agent will be rewarded for killing zombies using a ranged weapon and penalized if a zombie reaches it.
 
