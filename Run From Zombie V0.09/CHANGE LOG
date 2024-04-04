@@ -1,0 +1,85 @@
+[CURENT WORK] Version 0.09 . Run From Zombie V9
+
+
+[CHANGE LOG]
+
+[2/7/24]
+
+1) Started finetuning a model based on 128 hidden nodes. Setting L2 to 0.1 had the biggest impact for better performance.
+
+2) Finetuned reward function
+
+3) Finally, 99-100% sucess rate models!
+
+4) updating version to 0.08
+
+5) begining work on a "Marathon Mode" which allows the agent to try and find many civilians in one go.
+
+6) Created marathonMode.js to handle marathon logic. It's basically combining code from userTraining.js with the TD3 actions.
+
+[2/8/24]
+
+1) created a "marathon mode" that allows the agent to try and collect as many civilians as it can within the step count.
+
+[2/22/2024]
+
+1) rewarked reward function to get distance from aray detected targets instead of simply the offset value (which was based on the ray length).
+
+[2/25/2024]
+
+1) Increased maximum gamma to 0.999.
+
+2) Warmup now causes random actions for that many steps.
+
+3) Unless testing, gausian noise will always be added to agent actions. (From what I understand it was supposed to be like this the whole time).
+
+[3/1/2024]
+
+1) activeTraining is now true if agent.memory.cnt is higher than the agent.warmup amount (it was using trainstep causing the warmup to trigger again when memory is reloaded).
+
+2) currentStep now starts at 1. (for breaking while loop after max steps reached).
+
+3) Fixed rays not making detections on first step (they were defaulting to 1).
+
+4) created a new error thrown when memory buffer size is smaller then batch size (It was failing silently).
+
+[3/2/2024]
+
+1) An error will now be manually thrown if you try to load memory that has a higher memory size than the current agent memory max size.
+
+2) Downloaded memory no longer saves the agents max memory size (unused variable).
+
+[3/3/2024]
+
+1) as per the original paper, isDone will now only be triggered if the terminal state is caused before
+	reaching the horizon (maximum steps in the episode).
+
+2) Critic loss functions will now pull from the same group data instead of having seperate generations of them (this is how it always should have been).
+
+[3/6/2024]
+
+1) Max batch size raised to 640
+
+2) Increased version to 0.09
+
+[3/7/2024]
+
+1) Increased max steps to 10,000 primarily for testing purposes of long single episodes.
+
+[3/18/2024]
+
+1) Added a button to log the final loss of each run for Actor, Critic, and Critic 2
+
+[3/20/2024]
+
+1) Added a button to log memory used in replay buffer.
+
+[4/2/2024]
+
+1) Change the "Start TD3 AI" button to "Train TD3 AI"
+
+[4/3/2024]
+
+1) Updating random spawns to spawn a little further from walls (preventing boxed-in spawns).
+
+2) New spawns boost success to 99%. Run From Zombie is complete.
