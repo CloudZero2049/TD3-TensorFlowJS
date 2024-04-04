@@ -9,7 +9,9 @@
    
 	3b) Run From Zombie: A more complex project. The agent must run from a zombie in a limited area, forcing it to run in large circles. It is rewarded based on how long it survives, and penalized if it 		touches the zombie.
 
-	3c) Attack Zombie: The agent will be rewarded for killing zombies using a ranged weapon, and penalized if a zombie reaches it.
+ 	3c) AI Plays Tag: A setup that allows trained models from (3a) and (3b) to face off in a game of tag.
+
+   	3d) Attack Zombie: The agent will be rewarded for killing zombies using a ranged weapon and penalized if a zombie reaches it.
 
 5) The goal of this project is to create a working Twin Delayed Deep Deterministic Policy Gradient (TD3) (similar to DDPG), written in JavaScript with the only dependency being TensorFlow JS. It is meant to be a  blueprint that the community can use to create other projects with TensorFlow JS. The TD3 will use a simple environment containing an agent/player, and other entities such as a civilian or zombie. The environment is based on HTML5 Canvas. (x:0,y:0 in top left corner).
    
