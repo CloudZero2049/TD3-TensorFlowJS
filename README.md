@@ -9,7 +9,9 @@
    
 	3b) Run From Zombie: A more complex project. The agent must run from a zombie in a limited area, forcing it to run in large circles. It is rewarded based on how long it survives, and penalized if it 		touches the zombie.
 
-4) The goal of this project is to create a working Twin Delayed Deep Deterministic Policy Gradient (TD3) (similar to DDPG), written in JavaScript with the only dependency being TensorFlow JS. It is meant to be a  blueprint that the community can use to create other projects with TensorFlow JS. The TD3 will use a simple environment containing an agent/player, and other entities such as a civilian or zombie. The environment is based on HTML5 Canvas. (x:0,y:0 in top left corner).
+	3c) Attack Zombie: The agent will be rewarded for killing zombies using a ranged weapon, and penalized if a zombie reaches it.
+
+5) The goal of this project is to create a working Twin Delayed Deep Deterministic Policy Gradient (TD3) (similar to DDPG), written in JavaScript with the only dependency being TensorFlow JS. It is meant to be a  blueprint that the community can use to create other projects with TensorFlow JS. The TD3 will use a simple environment containing an agent/player, and other entities such as a civilian or zombie. The environment is based on HTML5 Canvas. (x:0,y:0 in top left corner).
    
 	4a) The agent has at least 2 actions [move direction x, move direction y].
 
@@ -23,9 +25,9 @@
 
    	4f) (Version 0.03) You can now train the agent directly from memory if you wish. This is much faster than going through the whole process and is usefull for when using user-generated memories (in 		moderation), otherwise it could have a negative effect on training because the agent isn't recording new actions.
 
-5) This project began by using ChatGPT(v.3.5) to help me translate code from Python into JavaScript that utilizes TensorFlow JS. I could not find any examples of TD3 on the internet in JavaScript, this is the first for all I know..
+6) This project began by using ChatGPT(v.3.5) to help me translate code from Python into JavaScript that utilizes TensorFlow JS. I could not find any examples of TD3 on the internet in JavaScript, this is the first for all I know..
 
-6) This is the list of resources used during/in this project:
+7) This is the list of resources used during/in this project:
    
 	6a) TensorFlow.js API : https://js.tensorflow.org/api/latest/?_gl=1*191k82w*_ga*MTA3NDE5MTk2Ni4xNjk3NTIwNzU0*_ga_W0YLR4190T*MTY5OTE0MjIxNy4zMC4wLjE2OTkxNDIyMTcuMC4wLjA.
 
