@@ -39,4 +39,8 @@
 2) Because of the "Test Agent" button I can now include trained actor_main model data files in the build folders to be used as examples.
 
 [2/7/24]
-1) Uploaded final Find Target V0.07 with a 99-100% accurate model and increasing version to V0.08.
+1) Uploaded final "Find Target" V0.07 with a 99-100% accurate model and increasing version to V0.08.
+
+[4/3/24]
+1) Uploaded final "Run From Zombie" V0.09 with a 99% success rate.
+2) Starting work on "Attack Zombie."
