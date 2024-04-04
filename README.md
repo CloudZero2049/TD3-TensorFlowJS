@@ -57,4 +57,4 @@
 
    	6n) Reward (Mis)Design For Autonomous Driving, https://arxiv.org/pdf/2104.13906.pdf
 
-9) About CloudZero (2023): I am a 32-year-old college student working towards an AA and thinking about a BA in Artifical Inteligence. My goal is to become a computer programmer of some sort. I have a deep interest in game design and artificial intelligence.
+9) About CloudZero (2023): I am a 33-year-old college student working towards an AA and will soon be starting a BAS in Artifical Inteligence. My goal is to become a computer programmer of some sort. I have a deep interest in game design and artificial intelligence.
