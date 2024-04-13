@@ -1,0 +1,13 @@
+[CURENT WORK] Version 0.1 . AI Plays Tag
+
+1) Created specifically for actor models from Run From Zombie V0.09 and Find Target V0.07. (might work on other versions if they meet the requirements).
+2) Trained actor models are included in their respective folders.
+
+[CHANGE LOG]
+
+[4/13/2024]
+
+1) Removed everything except essentials for Tag
+2) fixed beginPath() in drawing method
+3) complete multi-"agent" tag implemented. Calls are made to the uploaded "Find Target" and "Run From Zombie" actor models.
+4) fancy UI created to track tags and run time.
