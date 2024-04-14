@@ -1,0 +1,264 @@
+<!DOCTYPE HTML>
+<html lang="us">
+<head>
+<meta charset="UTF-8">
+<title>TD3 AI: AI Plays Tag V0.1</title>
+
+<style rel="stylesheet" type="text/css">
+
+body { overflow: visible;
+}
+
+* {user-select: none;outline-style: none;}
+
+#canvasDiv {position: absolute;
+            left: 0;
+            top: 0;
+            z-index: 1;
+            }
+canvas {position: absolute;
+        border:5px solid #ffa700;
+        
+        z-index: 1;
+        }
+#mycanvas {background: transparent;
+            z-index: 2;
+            }
+#bgcanvas {z-index: 1;}
+
+#infoDiv {position: absolute;
+            top: 10px;
+            left: 600px;
+            z-index: 3;
+        }
+span {
+  display:inline-block;
+  margin-right:15px;
+}
+
+
+#buttonsDiv {position: relative;
+    top: 0px;
+    left: 0px;
+    z-index: 3;
+}
+#playersDiv {
+  position: absolute;
+    top: 0px;
+    left: 500px;
+    z-index: 3;
+}
+table,th,td {
+  border: 1px solid;
+  min-width: 80px;
+  text-align: center;
+}
+.slidecontainer {
+    position: relative;
+    top: 20px;
+    left: 0px;
+    z-index: 3;
+     /*width: 100%; Width of the outside container */
+}
+
+/* The slider itself */
+.slider {
+  -webkit-appearance: none;  /* Override default CSS styles */
+  appearance: none;
+  width: 300px; /* Full-width */
+  height: 10px; /* Specified height */
+  background: #d3d3d3; /* Grey background */
+  outline: none; /* Remove outline */
+  
+}
+
+/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none; /* Override default look */
+  appearance: none;
+  width: 15px; /* Set a specific slider handle width */
+  height: 10px; /* Slider handle height */
+  background: #04AA6D; /* Green background */
+  cursor: pointer; /* Cursor on hover */
+}
+
+.slider::-moz-range-thumb {
+  width: 15px; /* Set a specific slider handle width */
+  height: 10px; /* Slider handle height */
+  background: #04AA6D; /* Green background */
+  cursor: pointer; /* Cursor on hover */
+}
+
+</style>
+
+  <!-- Import TensorFlow.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+  <!-- Import tfjs-vis -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.0.2/dist/tfjs-vis.umd.min.js"></script>
+</head>
+    
+<body>
+<div id="canvasDiv">
+<canvas id="bgCanvas"></canvas>
+<canvas id="myCanvas"></canvas>
+</div>
+
+<div id="infoDiv">
+
+<div id="buttonsDiv">
+    <button id="startButton" onclick="Game.start(`TD3`);" disabled="true">Start Tag</button>
+    <button id="stopButton" onclick="Game.stop();" disabled="true">Stop Tag</button>
+    <button id="pauseButton" onclick="Game.pause();" disabled="true">Pause Tag</button>
+    <button id="unpauseButton" onclick="Game.unpause();" disabled="true">Unpause Tag</button>
+</div>
+<div class="slidecontainer">
+    <input type="range" min="1" max="1000" value="5" class="slider" id="episodeRange">
+    <label for="episodeRange" id="episodeInfo">Episodes: 3</label></br>
+  
+    <input type="range" min="1" max="10000" value="400" class="slider" id="stepRange">
+    <label for="stepRange" id="stepInfo">Steps: 400</label></br>
+
+    <input type="range" min="1" max="20" value="3" class="slider" id="chaserRange">
+    <label for="chaserRange" id="chaserInfo">Chasers: 3</label></br>
+
+    <input type="range" min="1" max="20" value="13" class="slider" id="runnerRange">
+    <label for="runnerRange" id="runnerInfo">Runners: 13</label></br>
+
+    <input type="range" min="1" max="10" step="0.1" value="3"  class="slider" id="chaseSpeedRange">
+    <label for="chaseSpeedRange" id="chaseSpeedInfo">Chaser Speed: 3</label></br>
+
+    <input type="range" min="1" max="10" step="0.1" value="5"  class="slider" id="runSpeedRange">
+    <label for="runSpeedRange" id="runSpeedInfo">Runner Speed: 5</label></br>
+
+  </br>
+
+  <!-- <input type="checkbox" id="randAgentCheckbox" name="randAgentCheckbox" />
+    <label for="randAgentCheckbox">Random PLayer 1 Spawn?</label>
+  
+  -->
+  </div>
+<div id="playersDiv">
+  <table id="playersTable">
+<thead>
+  <tr> <th>Players</th> <th>Tags</th> <th>Run Time</th></tr>
+</thead>
+ <tbody>
+
+ </tbody>
+ 
+
+</table>
+</div>
+
+ <p style="color:red">You can use left and right arrows after clicking a slider for fine tuning</p>
+
+ <div id="saveLoadDiv">
+  
+  <p>Select Chaser agent model files to load (.json and .weights.bin)</p>
+  <input type="file" id="chaserInput" multiple="true" accept=".json, .bin" />
+
+  <p>Select Runner agent model files to load (.json and .weights.bin)</p>
+  <input type="file" id="runnerInput" multiple="true" accept=".json, .bin" />
+  
+  <p style="color:rgb(218, 10, 10)" id="modelsLoadedInfo">Models Loaded: None</p>
+  
+  
+</div>
+</div>
+
+<script src="utils.js"></script>
+<script src="sensor.js"></script>
+<script src="Classes.js"> </script>
+<script src="game.js"></script>
+<script src="TD3script.js"></script>
+<script src="TAG.js"></script>
+<script src="keyboardControl.js"> </script>
+<script>
+   
+    const episodeOutput = document.getElementById("episodeInfo");
+    episodeOutput.innerHTML = `Episodes: ${UI.episodeSlider.value}`; // Display the default slider value
+
+    const stepOutput = document.getElementById("stepInfo");
+    stepOutput.innerHTML = `Steps: ${UI.stepSlider.value}`;
+
+    const chaserOutput = document.getElementById("chaserInfo");
+    chaserOutput.innerHTML = `Chasers: ${UI.chaserSlider.value}`;
+
+    const runnerOutput = document.getElementById("runnerInfo");
+    runnerOutput.innerHTML = `Runners: ${UI.runnerSlider.value}`;
+
+    const chaseSpeedOutput = document.getElementById("chaseSpeedInfo");
+    chaseSpeedOutput.innerHTML = `Chaser Speed: ${UI.chaseSpeedSlider.value}`;
+
+    const runSpeedOutput = document.getElementById("runSpeedInfo");
+    runSpeedOutput.innerHTML = `Runner Speed Speed: ${UI.runSpeedSlider.value}`;
+    
+    UI.episodeSlider.oninput = function() {
+      episodeOutput.innerHTML = `Episodes: ${this.value}`;
+    }
+    UI.stepSlider.oninput = function() {
+      stepOutput.innerHTML = `Steps: ${this.value}`;
+    }
+    UI.chaserSlider.oninput = function() {
+      chaserOutput.innerHTML = `Chasers: ${this.value}`;
+    }
+    UI.runnerSlider.oninput = function() {
+      runnerOutput.innerHTML = `Runners: ${this.value}`;
+    }
+    UI.chaseSpeedSlider.oninput = function() {
+      chaseSpeedOutput.innerHTML = `Chaser Speed: ${this.value}`;
+    }
+    UI.runSpeedSlider.oninput = function() {
+      runSpeedOutput.innerHTML = `Runner Speed: ${this.value}`;
+    }
+   
+    const chaserInput = document.getElementById('chaserInput');
+    chaserInput.addEventListener('change', checkChaserModel);
+    function checkChaserModel() {
+      try {
+        const file1 = chaserInput.files[0];
+        const file2 = chaserInput.files[1];
+        
+        if (file1 && file2){
+          for (i=0; i < chaserInput.files.length; i++) {
+            if ((chaserInput.files[i].type !== `application/octet-stream`) && (chaserInput.files[i].type !== `application/json`)) {
+              throw "A model file is wrong type. Expected JSON or octet-stream (.bin)";
+              return
+            }
+          }
+          
+          agent.loadChaserModel(chaserInput.files);
+        }
+        else {throw "Minimum 2 files required: JSON and .bin"}
+      } catch (error) {
+        console.log(`Unable to load files(index.html): ${error}`)
+      }
+    }
+    
+    const runnerInput = document.getElementById('runnerInput');
+    runnerInput.addEventListener('change', checkrunnerModel);
+    function checkrunnerModel() {
+      try {
+        const file1 = runnerInput.files[0];
+        const file2 = runnerInput.files[1];
+        
+        if (file1 && file2){
+          for (i=0; i < runnerInput.files.length; i++) {
+            if ((runnerInput.files[i].type !== `application/octet-stream`) && (runnerInput.files[i].type !== `application/json`)) {
+              throw "A model file is wrong type. Expected JSON (.json) or octet-stream (.bin)";
+              return
+            }
+          }
+          
+          agent.loadRunnerModel(runnerInput.files);
+        }
+        else {throw "Minimum 2 files required: JSON and .bin"}
+      } catch (error) {
+        console.log(`Unable to load files(index.html): ${error}`)
+      }
+    }
+</script>
+</body>
+
+</html>
+
