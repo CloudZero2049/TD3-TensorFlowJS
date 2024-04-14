@@ -1,12 +1,9 @@
-[CURENT WORK] Version 0.08
+[CURENT WORK] Version 0.1
 
-1) Two mini-projects have been completed: Run From Zombie (V0.06) and Find Target (V0.07). Each will be found in their respective folders.
+1) Three projects have been completed: Find Target (V0.07), Run From Zombie (V0.09), and AI Plays Tag (V0.1). Each will be found in their respective folders.
 
-2) [General Work Update 2/7/24]: 
-  2a) I figured it would be best to learn about fine tuning the models on something simple, so I did so on the Find Target setup using the ray-casting system. I chose that method because it is easy to generalize to different purposes. I was finally able to get the Find Target model to 99-100% success rate.
-  2b) At this point I might dabble a bit with the new Find Target trained model to see if it can find multiple civilians continually without episode breaks in between. Maybe It will be a time trail to see how many it can get.
-  2c) (After maybe doing 2b) I will be going back to the Run From Zombie setup to see if I can improve it with the new fine tuning methods.
-  2d) (After 2c) The next step, naturally, will be to finally give the agent a way to fight back against the zombie. The good news is I already have exstensive knowledge and code to do that.
+2) [General Work Update 4/13/24]: 
+  2a) After a lot of fine-tuning I have learned a lot about the possibilities of the framework I created and I am confident in its capabilities. I will now be moving onto a more ambitios "Attack Zombie" project that will serve as a major mile stone to larger projects. The main reason is because up until now the agent has only had to make choises based on movement (move x, move y), and now I will be giving it more actions.
 
 
 [MAJOR CHANGE LOG]
@@ -43,4 +40,7 @@
 
 [4/3/24]
 1) Uploaded final "Run From Zombie" V0.09 with a 99% success rate.
-2) Starting work on "Attack Zombie."
+2) Starting work on "AI Plays Tag"
+
+[4/13/2024]
+1) Uploaded final "AI Plays Tag" which uses actor models from Find Target V0.07 and Run From Zombie V0.09. It can handle multiple AI controlled players that each make calls to the uploaded models depending on what role they are in (chaser or runner).
