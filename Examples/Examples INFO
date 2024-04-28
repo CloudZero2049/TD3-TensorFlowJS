@@ -1,2 +1,0 @@
-1) The examples are shortened code that are designed to be used with the 2 actor_main model files (.json and .weights.bin) that are within the folder. You can substitute other actor_main files too.
-2) No learning occurs in the example code. Go to the main folders for that.
