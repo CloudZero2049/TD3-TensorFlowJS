@@ -1,9 +1,0 @@
-1) Web Console Log info: 
-	(TD3script.js)
-	
-	1a)[Line 520] A notice after each step saying the reward and average reward.
-	1b)[Line 899] A notice saying on what step the zomibie reaches the agent if it occurs.
-
-	(game.js)
-	1b)[Line 62] Running tf.memory() to track number of tensors (track memory leaks)
-	1c)[Line 63] A notice saying "TD3 Complete" when it runs all the way through without errors
