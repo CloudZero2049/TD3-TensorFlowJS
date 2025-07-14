@@ -2,8 +2,9 @@
 
 1) Three projects have been completed: Find Target (V0.07), Run From Zombie (V0.09), and AI Plays Tag (V0.1). Each will be found in their respective folders.
 
-2) [General Work Update 4/13/24]: 
-  2a) After a lot of fine-tuning I have learned a lot about the possibilities of the framework I created and I am confident in its capabilities. I will now be moving onto a more ambitios "Attack Zombie" project that will serve as a major mile stone to larger projects. The main reason is because up until now the agent has only had to make choises based on movement (move x, move y), and now I will be giving it more actions.
+2) [General Work Update 7/13/25]: 
+  2a) After a lot of fine-tuning I have learned a lot about the possibilities of the framework I created and I am confident in its capabilities.
+  2b) Although I had plans of continuing this to have an agent attack a zombie, now that I have learned more about Python and AI in college, I will be considering this project finished for the foreseeable future so that I can focus on designing the program that this project was a stepping stone towards.
 
 
 [MAJOR CHANGE LOG]
