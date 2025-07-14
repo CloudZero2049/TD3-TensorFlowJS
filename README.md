@@ -1,9 +1,9 @@
 # TD3-TensorFlowJS
-1) TD3 (Twin Delayed Deep Deterministic Policy Gradient) is a Reinforcement Learning deep neural network setup that uses 6 neural networks in conjunction to get an optimal result for an Artifical Inteligence Agent's choices. This is a passion project and is a work in progress, by a single person, and therefore may not work as expected. It is currently in development using the Google Chrome web browser, other browser might not work (I haven't tested any). You can check the "saved model data" folder for pre-trained models for the earlier builds, otherwise I am now including pre-trained models in the build folders when they are satisfactory.
+1) TD3 (Twin Delayed Deep Deterministic Policy Gradient) is a Reinforcement Learning deep neural network setup that uses 6 neural networks in conjunction to get an optimal result for an Artifical Inteligence Agent's choices. This is a passion project and is a work in progress, by a single person. This project is being developed using the Google Chrome web browser; Other browser might not work (I haven't tested any other). You can check the "saved model data" folder for pre-trained models for the earlier builds, otherwise I am including pre-trained models in the build folders when they are satisfactory.
 
 2) I am creating this for the community, and therefore am hereby allowing anyone and everyone to use the code and information within for whatever (legal) purpose they desire (I'm using MIT License). I only ask that you give me / this repository (CloudZero2049) a shout-out if used in a project that is viewable to the community so that others can find it as well.
    
-3) This is a list of mini-projects as part of the whole and their descriptions.
+3) This is a list of mini-projects completed as part of the whole and their descriptions.
    
 	3a) Find Target: The agent must find a civilian "target".  it is rewarded for reaching the civilian.
    
@@ -11,19 +11,17 @@
 
  	3c) AI Plays Tag: A setup that allows trained models from (3a V0.07) and (3b V0.09) to face off in a game of tag.
 
-   	3d) Attack Zombie: The agent will be rewarded for killing zombies using a ranged weapon and penalized if a zombie reaches it.
-
 5) The goal of this project is to create a working Twin Delayed Deep Deterministic Policy Gradient (TD3) (similar to DDPG), written in JavaScript with the only dependency being TensorFlow JS. It is meant to be a  blueprint that the community can use to create other projects with TensorFlow JS. The TD3 will use a simple environment containing an agent/player, and other entities such as a civilian or zombie. The environment is based on HTML5 Canvas. (x:0,y:0 in top left corner).
    
 	4a) The agent has at least 2 actions [move direction x, move direction y].
 
-	4b) The Observation Space has at least 2 array locations representing the x,y coordinates of the agent. It currently (and for the foreseeable future) has additional locations for "detection rays" that 	emit from the agent/player that show the distance to neerby object and entities (adjustable). Depending on the project, there might be more [[ax, ay, ray1, ray2, ray3, etc...]].
+	4b) The Observation Space has at least 2 array locations representing the x,y coordinates of the agent. It currently (and for the foreseeable future) has additional locations for "detection rays" that 	emit from the agent/player that show the distance to neerby objects and entities (adjustable). Depending on the project, there might be more [[ax, ay, ray1, ray2, ray3, etc...]].
 
-	4c) The projects use intricate reward systems to ensure that the agent is getting valid feedback for training. At the moment their are some rewards/penalties that are completely disabled if no sensor rays 	detect anything in order to prevent contamination.
+	4c) The projects use intricate reward systems to ensure that the agent is getting valid feedback for training. At the moment there are some rewards/penalties that are completely disabled if no sensor rays 	detect anything in order to prevent contamination.
 
-	4d) Canvas animation is currently disabled when running TD3 (it would bog down training anyway). There is a visual representation that shows the paths the agent took after a run, and you can click the 	"Action Replay" button to see a full animation (after a run is finished). The 0 key will stop animation (good if there's looping errors tied to it).
+	4d) Canvas animation is currently disabled when training TD3 (it would bog down training anyway). There is a visual representation that shows the paths the agent took after a run, and you can click the 	"Action Replay" button to see a full animation (after a run is finished). The 0 key will stop animation (good if there's looping errors tied to it).
 
- 	4e) (Version 0.03) You can now record user inputs directly into the memory buffer to assist training if you wish.
+ 	4e) (Version 0.03) You can now record user inputs directly into the memory buffer to assist training if you wish (impact on training debatable).
 
    	4f) (Version 0.03) You can now train the agent directly from memory if you wish. This is much faster than going through the whole process and is usefull for when using user-generated memories (in 		moderation), otherwise it could have a negative effect on training because the agent isn't recording new actions.
 
@@ -59,4 +57,4 @@
 
    	6n) Reward (Mis)Design For Autonomous Driving, https://arxiv.org/pdf/2104.13906.pdf
 
-9) About CloudZero (Updated: April 11, 2025): I am a 34-year-old college student working towards a BAS in Artifical Inteligence. My goal is to become a computer programmer of some sort. I have a deep interest in game design and artificial intelligence.
+9) About CloudZero (Updated: July 13, 2025): I am a 34-year-old college student working towards a BAS in Artifical Inteligence. My goal is to become a computer programmer of some sort. I have a deep interest in game design and artificial intelligence, so to combine those into a career is my goal.
