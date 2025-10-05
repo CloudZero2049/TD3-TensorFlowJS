@@ -1,3 +1,5 @@
+- You can support my work through Patreon at https://www.patreon.com/c/CloudZero
+- 
 # TD3-TensorFlowJS
 1) TD3 (Twin Delayed Deep Deterministic Policy Gradient) is a Reinforcement Learning deep neural network setup that uses 6 neural networks in conjunction to get an optimal result for an Artifical Inteligence Agent's choices. This is a passion project and is a work in progress, by a single person. This project is being developed using the Google Chrome web browser; Other browser might not work (I haven't tested any other). You can check the "saved model data" folder for pre-trained models for the earlier builds, otherwise I am including pre-trained models in the build folders when they are satisfactory.
 
