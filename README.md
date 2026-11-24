@@ -58,5 +58,3 @@
    	6n) Reward (Mis)Design For Autonomous Driving, https://arxiv.org/pdf/2104.13906.pdf
 
 9) About CloudZero (Updated: November 23, 2026): I am a 35-year-old college student working towards a BAS in Artificial Intelligence. My goal is to work with AI systems, preferably with video games.
-
-10) You can support my work through Patreon at https://www.patreon.com/c/CloudZero
